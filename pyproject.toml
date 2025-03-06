@@ -1,0 +1,18 @@
+[project]
+name = "misfit-core"
+version = "0.0.1"
+description = "A tool for create specified invalid parameters for tests in bicoin."
+authors = [
+    {name = "joãozinho ",email = "joaomcr@proton.me",
+     name="TheMhv", email = "mhv.geral@gmail.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
