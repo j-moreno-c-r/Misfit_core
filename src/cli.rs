@@ -67,7 +67,7 @@ pub fn handle() {
             Commands::Help => help(),
             Commands::Transaction { txscount, .. } => transaction(txscount), // TODO: Implement params into transaction generator
             Commands::Tx { txscount, .. } => transaction(txscount), // TODO: Implement params into transaction generator
-            Commands::Block { txscount } => block(txscount),
+            Commands::Block { txscount } => block(txscount), // TODO: Implement args
             Commands::Clear => clear(),
             Commands::RegtestStart => handle_result(regtest_manager.start()),
             Commands::RegtestStop => handle_result(regtest_manager.stop()),
@@ -105,11 +105,11 @@ fn help() {
 // TODO: Implement params into transaction generator
 fn transaction(txscount: u32) {
     let transactions = Generator::transaction(txscount);
-
     println!("Transactions: {}", transactions);
 }
 
 fn block(txscount: u32) {
+    // TODO: Implement args
     let block = Generator::block(txscount);
     println!("Block: {}", block);
 }

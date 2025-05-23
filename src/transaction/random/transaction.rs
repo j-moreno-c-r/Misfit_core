@@ -7,12 +7,12 @@ use super::{
 use bitcoin::{absolute::LockTime, transaction::Version, Transaction, TxIn, TxOut};
 
 pub struct TxParams {
-    pub(crate) version: Option<Version>,
-    pub(crate) lock_time: Option<LockTime>,
+    pub version: Option<Version>,
+    pub lock_time: Option<LockTime>,
     // TODO: Input count
-    pub(crate) input: Option<InputParams>,
+    pub input: Option<InputParams>,
     // TODO: Output count
-    pub(crate) output: Option<OutputParams>,
+    pub output: Option<OutputParams>,
 }
 
 impl Default for TxParams {

@@ -7,10 +7,10 @@ use super::{
 };
 
 pub struct InputParams {
-    outpoint: Option<OutPoint>,
-    script: Option<ScriptBuf>,
-    sequence: Option<Sequence>,
-    witness: Option<Witness>,
+    pub outpoint: Option<OutPoint>,
+    pub script: Option<ScriptBuf>,
+    pub sequence: Option<Sequence>,
+    pub witness: Option<Witness>,
 }
 
 impl Default for InputParams {
@@ -57,7 +57,7 @@ impl RandomInput for TxIn {
         let sequence = params
             .sequence
             .unwrap_or_else(|| Sequence(rand::thread_rng().gen::<u32>()));
-        let witness = params.witness.unwrap_or(Witness::default());
+        let witness = params.witness.unwrap_or(Witness::default()); // TODO: Implement Witness param
 
         TxIn {
             previous_output: outpoint,
