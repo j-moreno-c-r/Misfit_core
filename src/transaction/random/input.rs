@@ -1,11 +1,9 @@
 use bitcoin::{hashes::Hash, OutPoint, ScriptBuf, Sequence, Transaction, TxIn, Txid, Witness};
 use secp256k1::rand::{self, Rng};
 
-use super::{
-    output::OutputParams,
-    transaction::{RandomTransacion, TxParams},
-};
+use super::transaction::{RandomTransacion, TxParams};
 
+#[derive(Clone)]
 pub struct InputParams {
     pub outpoint: Option<OutPoint>,
     pub script: Option<ScriptBuf>,
@@ -32,21 +30,15 @@ impl RandomInput for TxIn {
     fn random(params: InputParams) -> TxIn {
         let outpoint = params.outpoint.unwrap_or_else(|| {
             // Create a random transaction for use as outpoint
-            let tx_id = Transaction::random(TxParams {
-                version: None,
-                lock_time: None,
-                input: Some(InputParams {
-                    outpoint: Some(OutPoint {
-                        txid: Txid::all_zeros(),
-                        vout: rand::thread_rng().gen::<u32>(),
-                    }),
-                    script: None,
-                    sequence: None,
-                    witness: None,
-                }),
-                output: Some(OutputParams::default()),
-            })
-            .compute_txid();
+            let mut input_params = InputParams::default();
+            input_params.outpoint = Some(OutPoint {
+                txid: Txid::all_zeros(),
+                vout: rand::thread_rng().gen::<u32>(),
+            });
+            let mut tx_params = TxParams::default();
+            tx_params.input = Some(input_params);
+
+            let tx_id = Transaction::random(tx_params).compute_txid();
 
             return OutPoint {
                 txid: tx_id,

@@ -3,6 +3,7 @@ use secp256k1::rand::{self, Rng};
 
 use super::script::{RandomScript, ScriptParams};
 
+#[derive(Clone)]
 pub struct OutputParams {
     value: Option<Amount>,
     script_pubkey: Option<ScriptBuf>,

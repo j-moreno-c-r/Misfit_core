@@ -14,6 +14,26 @@ pub enum ScriptTypes {
     P2WPKH,
     P2WSH,
 }
+
+impl Clone for ScriptTypes {
+    fn clone(&self) -> Self {
+        match self {
+            ScriptTypes::P2PK => ScriptTypes::P2PK,
+            ScriptTypes::P2PKH => ScriptTypes::P2PKH,
+            ScriptTypes::P2SH => ScriptTypes::P2SH,
+            ScriptTypes::P2TR => ScriptTypes::P2TR,
+            ScriptTypes::P2TWEAKEDTR => ScriptTypes::P2TWEAKEDTR,
+            ScriptTypes::P2WPKH => ScriptTypes::P2WPKH,
+            ScriptTypes::P2WSH => ScriptTypes::P2WSH,
+        }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        *self = source.clone()
+    }
+}
+
+#[derive(Clone)]
 pub struct ScriptParams {
     script_type: Option<ScriptTypes>,
 }
