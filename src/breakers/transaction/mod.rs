@@ -7,9 +7,9 @@ pub mod transaction;
 pub mod version;
 
 pub use flags::*;
-pub use transaction::*;
 pub use input::*;
+pub use locktime::*;
 pub use output::*;
 pub use script::*;
-pub use locktime::*;
+pub use transaction::*;
 pub use version::*;

@@ -8,7 +8,6 @@ pub struct MerkleRootParams {
     pub txs: Option<Vec<Transaction>>,
 }
 
-
 pub trait MerkleRoot {
     fn from_transactions(txs: Vec<Transaction>) -> TxMerkleNode;
     fn random(params: MerkleRootParams) -> TxMerkleNode;

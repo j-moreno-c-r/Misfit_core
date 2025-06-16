@@ -10,7 +10,6 @@ pub struct OutputParams {
     pub script_params: Option<ScriptParams>,
 }
 
-
 pub trait RandomOutput {
     fn random(params: OutputParams) -> TxOut;
 }

@@ -1,28 +1,28 @@
-use std::collections::HashSet;
+use super::{script::corrupt_script, InvalidationFlag};
 use bitcoin::{TxIn, Witness};
-use super::{InvalidationFlag, script::corrupt_script};
+use std::collections::HashSet;
 
 pub fn invalidate_input_in_place(
-    input: &mut TxIn, 
-    flags: &HashSet<InvalidationFlag>, 
-    invalidate_all: bool
+    input: &mut TxIn,
+    flags: &HashSet<InvalidationFlag>,
+    invalidate_all: bool,
 ) {
     // Note: InputTxid invalidation is now handled at transaction level
-    
+
     if invalidate_all || flags.contains(&InvalidationFlag::InputVout) {
         input.previous_output.vout ^= 1; // Flip last bit
     }
-    
+
     // Invalidate script_sig
     if invalidate_all || flags.contains(&InvalidationFlag::InputScriptSig) {
         input.script_sig = corrupt_script(&input.script_sig);
     }
-    
+
     // Invalidate sequence
     if invalidate_all || flags.contains(&InvalidationFlag::InputSequence) {
         input.sequence = bitcoin::Sequence(0xFFFFFFFF ^ input.sequence.0);
     }
-    
+
     // Invalidate witness data
     if invalidate_all || flags.contains(&InvalidationFlag::WitnessData) {
         input.witness = corrupt_witness(&input.witness);

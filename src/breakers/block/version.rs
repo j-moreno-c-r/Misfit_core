@@ -9,7 +9,7 @@ impl VersionProcessor {
             override_version
         } else {
             // Default behavior: set version to maximum valid value
-            
+
             0x3FFFFFFF
         }
     }

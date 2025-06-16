@@ -14,7 +14,6 @@ pub struct TxParams {
     pub(crate) output: Option<OutputParams>,
 }
 
-
 pub trait RandomTransacion {
     fn random(params: TxParams) -> Transaction;
 }

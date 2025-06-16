@@ -1,7 +1,7 @@
+use crate::api::Generator;
+use clap::{Parser, Subcommand};
 use std::io;
 use std::io::Write;
-use clap::{Parser, Subcommand};
-use crate::api::Generator;
 
 #[derive(Parser)]
 #[command(version, about, disable_help_subcommand = true)]
@@ -17,11 +17,11 @@ pub enum Commands {
     Exit,
     #[command(name = "decode-transaction")]
     DecodeTransaction {
-        raw_transaction: String
+        raw_transaction: String,
     },
     #[command(name = "decode-block")]
     DecodeBlock {
-        block_header: String
+        block_header: String,
     },
     #[command(name = "break-transaction")]
     BreakTransaction {
@@ -117,27 +117,37 @@ pub fn handle() {
 
         match cli.command {
             Commands::Help => help(),
-            Commands::DecodeTransaction { raw_transaction } => transaction_splitter(raw_transaction),
+            Commands::DecodeTransaction { raw_transaction } => {
+                transaction_splitter(raw_transaction)
+            }
             Commands::DecodeBlock { block_header } => block_splitter(block_header),
-            Commands::BreakTransaction { 
-                raw_transaction, 
-                version, 
-                txid, 
-                vout, 
-                script_sig, 
-                sequence, 
-                amount, 
-                script_pubkey, 
-                witness, 
-                locktime, 
-                all 
+            Commands::BreakTransaction {
+                raw_transaction,
+                version,
+                txid,
+                vout,
+                script_sig,
+                sequence,
+                amount,
+                script_pubkey,
+                witness,
+                locktime,
+                all,
             } => {
                 let flags = build_transaction_flags_vector(
-                    version, txid, vout, script_sig, sequence, 
-                    amount, script_pubkey, witness, locktime, all
+                    version,
+                    txid,
+                    vout,
+                    script_sig,
+                    sequence,
+                    amount,
+                    script_pubkey,
+                    witness,
+                    locktime,
+                    all,
                 );
                 break_transaction(raw_transaction, flags);
-            },
+            }
             Commands::BreakBlock {
                 block_header,
                 version,
@@ -152,11 +162,19 @@ pub fn handle() {
                 zero_hashes,
             } => {
                 let (flags, config) = build_block_flags_and_config(
-                    version, prev_hash, merkle_root, timestamp, bits, nonce, all,
-                    version_override, timestamp_offset, zero_hashes
+                    version,
+                    prev_hash,
+                    merkle_root,
+                    timestamp,
+                    bits,
+                    nonce,
+                    all,
+                    version_override,
+                    timestamp_offset,
+                    zero_hashes,
                 );
                 break_block(block_header, flags, config);
-            },
+            }
             Commands::Tx { txscount, .. } => transaction(txscount), // TODO: Implement params into transaction generator
             Commands::Block { txscount } => block(txscount),
             Commands::Clear => clear(),
@@ -165,41 +183,59 @@ pub fn handle() {
             Commands::GetBlockbyHeight { height } => {
                 handle_result(regtest_manager.handle_getblockbyheight(height))
             }
-            Commands::Exit => break
+            Commands::Exit => break,
         }
     }
     println!("Program finalized 👋");
 }
 
 fn build_transaction_flags_vector(
-    version: bool, 
-    txid: bool, 
-    vout: bool, 
-    script_sig: bool, 
-    sequence: bool, 
-    amount: bool, 
-    script_pubkey: bool, 
-    witness: bool, 
-    locktime: bool, 
-    all: bool
+    version: bool,
+    txid: bool,
+    vout: bool,
+    script_sig: bool,
+    sequence: bool,
+    amount: bool,
+    script_pubkey: bool,
+    witness: bool,
+    locktime: bool,
+    all: bool,
 ) -> Vec<String> {
     let mut flags = Vec::new();
-    
+
     if all {
         flags.push("--all".to_string());
         return flags;
     }
-    
-    if version { flags.push("--version".to_string()); }
-    if txid { flags.push("--txid".to_string()); }
-    if vout { flags.push("--vout".to_string()); }
-    if script_sig { flags.push("--script-sig".to_string()); }
-    if sequence { flags.push("--sequence".to_string()); }
-    if amount { flags.push("--amount".to_string()); }
-    if script_pubkey { flags.push("--script-pubkey".to_string()); }
-    if witness { flags.push("--witness".to_string()); }
-    if locktime { flags.push("--locktime".to_string()); }
-    
+
+    if version {
+        flags.push("--version".to_string());
+    }
+    if txid {
+        flags.push("--txid".to_string());
+    }
+    if vout {
+        flags.push("--vout".to_string());
+    }
+    if script_sig {
+        flags.push("--script-sig".to_string());
+    }
+    if sequence {
+        flags.push("--sequence".to_string());
+    }
+    if amount {
+        flags.push("--amount".to_string());
+    }
+    if script_pubkey {
+        flags.push("--script-pubkey".to_string());
+    }
+    if witness {
+        flags.push("--witness".to_string());
+    }
+    if locktime {
+        flags.push("--locktime".to_string());
+    }
+
     flags
 }
 
@@ -217,18 +253,30 @@ fn build_block_flags_and_config(
 ) -> (Vec<String>, Vec<String>) {
     let mut flags = Vec::new();
     let mut config = Vec::new();
-    
+
     if all {
         flags.push("--all".to_string());
     } else {
-        if version { flags.push("--version".to_string()); }
-        if prev_hash { flags.push("--prev-hash".to_string()); }
-        if merkle_root { flags.push("--merkle-root".to_string()); }
-        if timestamp { flags.push("--timestamp".to_string()); }
-        if bits { flags.push("--bits".to_string()); }
-        if nonce { flags.push("--nonce".to_string()); }
+        if version {
+            flags.push("--version".to_string());
+        }
+        if prev_hash {
+            flags.push("--prev-hash".to_string());
+        }
+        if merkle_root {
+            flags.push("--merkle-root".to_string());
+        }
+        if timestamp {
+            flags.push("--timestamp".to_string());
+        }
+        if bits {
+            flags.push("--bits".to_string());
+        }
+        if nonce {
+            flags.push("--nonce".to_string());
+        }
     }
-    
+
     // Configuration options
     if let Some(override_val) = version_override {
         config.push(format!("--version-override={}", override_val));
@@ -239,7 +287,7 @@ fn build_block_flags_and_config(
     if zero_hashes {
         config.push("--zero-hashes".to_string());
     }
-    
+
     (flags, config)
 }
 
@@ -299,7 +347,7 @@ fn transaction_splitter(raw_transaction: String) {
             println!("Locktime: {}", decoded.lock_time);
             println!("Input count: {:#?}", decoded.input);
             println!("Output count: {:#?}", decoded.output);
-        },
+        }
         Err(e) => {
             eprintln!("Error decoding transaction: {}", e);
         }
@@ -316,7 +364,7 @@ fn block_splitter(block_header: String) {
             println!("Bits: 0x{:08x}", header.bits.to_consensus());
             println!("Nonce: {}", header.nonce);
             println!("Block Hash: {}", header.block_hash());
-        },
+        }
         Err(e) => {
             eprintln!("Error decoding block header: {}", e);
         }
@@ -328,7 +376,7 @@ fn break_transaction(raw_transaction: String, flags: Vec<String>) {
         println!("No invalidation flags specified. Use 'help' for usage information.");
         return;
     }
-    
+
     let result = Generator::break_transaction(raw_transaction, flags);
     println!("🔨 Transaction Breaking Result:");
     println!("{}", result);
@@ -339,7 +387,7 @@ fn break_block(block_header: String, flags: Vec<String>, config: Vec<String>) {
         println!("No invalidation flags specified. Use 'help' for usage information.");
         return;
     }
-    
+
     let result = Generator::break_block(block_header, flags, config);
     println!("🔨 Block Breaking Result:");
     println!("{}", result);

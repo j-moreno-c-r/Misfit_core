@@ -23,7 +23,6 @@ pub struct HeaderParams {
     pub txs: Option<Vec<Transaction>>,
 }
 
-
 pub trait RandomHeader {
     fn random(params: HeaderParams) -> Header;
 }

@@ -1,9 +1,4 @@
-use std::{
-    error::Error,
-    process::Command,
-    thread,
-    time::Duration,
-};
+use std::{error::Error, process::Command, thread, time::Duration};
 
 use indicatif::{ProgressBar, ProgressStyle};
 use serde_json;
@@ -86,11 +81,17 @@ impl RegtestManager {
         println!("Current blockchain height: {}", current_height);
 
         if target_height < current_height {
-            println!("Block at height {} already exists. Retrieving...", target_height);
+            println!(
+                "Block at height {} already exists. Retrieving...",
+                target_height
+            );
         } else if target_height > current_height {
             let blocks_needed = target_height - current_height;
             let address = self.generate_address()?;
-            println!("Generating {} blocks to reach height {}...", blocks_needed, target_height);
+            println!(
+                "Generating {} blocks to reach height {}...",
+                blocks_needed, target_height
+            );
             self.mine_blocks(&address, blocks_needed)?;
             println!("Successfully generated {} blocks", blocks_needed);
         }
@@ -117,7 +118,8 @@ impl RegtestManager {
             return Err(format!(
                 "Failed to create wallet: {}",
                 String::from_utf8_lossy(&create_output.stderr)
-            ).into());
+            )
+            .into());
         }
 
         Ok(())
@@ -133,7 +135,8 @@ impl RegtestManager {
             return Err(format!(
                 "Address generation failed: {}",
                 String::from_utf8_lossy(&output.stderr)
-            ).into());
+            )
+            .into());
         }
 
         Ok(String::from_utf8(output.stdout)?.trim().to_string())
@@ -146,10 +149,9 @@ impl RegtestManager {
             .output()?;
 
         if !output.status.success() {
-            return Err(format!(
-                "Mining failed: {}",
-                String::from_utf8_lossy(&output.stderr)
-            ).into());
+            return Err(
+                format!("Mining failed: {}", String::from_utf8_lossy(&output.stderr)).into(),
+            );
         }
 
         Ok(())

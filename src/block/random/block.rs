@@ -11,7 +11,6 @@ pub struct BlockParams {
     pub txs: Option<Vec<Transaction>>,
 }
 
-
 pub trait RandomBlock {
     fn random(params: BlockParams) -> Block;
 }

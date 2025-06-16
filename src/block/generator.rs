@@ -1,10 +1,11 @@
-use bitcoin::Block;
 use super::random::block::{BlockParams, RandomBlock};
+use bitcoin::Block;
 use bitcoin::OutPoint;
 
 use crate::transaction::{
-        generator::GenerateTx,
-        random::{input::InputParams, transaction::TxParams}, };
+    generator::GenerateTx,
+    random::{input::InputParams, transaction::TxParams},
+};
 
 pub struct GenerateBlock {}
 

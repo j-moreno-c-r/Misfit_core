@@ -1,6 +1,6 @@
+use super::{input::*, locktime::*, output::*, version::*, InvalidationFlag};
+use bitcoin::{consensus::deserialize, Transaction};
 use std::collections::HashSet;
-use bitcoin::{Transaction, consensus::deserialize};
-use super::{InvalidationFlag, input::*, output::*, version::*, locktime::*};
 
 // Transaction processor with Bitcoin Core Transaction struct
 pub struct TransactionInvalidator;
@@ -8,32 +8,32 @@ pub struct TransactionInvalidator;
 impl TransactionInvalidator {
     pub fn invalidate(mut tx: Transaction, flags: &HashSet<InvalidationFlag>) -> Transaction {
         let should_invalidate_all = flags.contains(&InvalidationFlag::All);
-        
+
         // Invalidate transaction structure (affects txid) - do this first
         if should_invalidate_all || flags.contains(&InvalidationFlag::InputTxid) {
             Self::corrupt_txid(&mut tx);
         }
-        
+
         // Invalidate version
         if should_invalidate_all || flags.contains(&InvalidationFlag::Version) {
             tx.version = invalidate_version(tx.version);
         }
-        
+
         // Invalidate locktime
         if should_invalidate_all || flags.contains(&InvalidationFlag::Locktime) {
             tx.lock_time = invalidate_locktime(tx.lock_time);
         }
-        
+
         // Invalidate inputs
         for input in tx.input.iter_mut() {
             invalidate_input_in_place(input, flags, should_invalidate_all);
         }
-        
+
         // Invalidate outputs
         for output in tx.output.iter_mut() {
             invalidate_output_in_place(output, flags, should_invalidate_all);
         }
-        
+
         tx
     }
 
@@ -46,7 +46,7 @@ impl TransactionInvalidator {
             // If only one input, corrupt its previous output
             tx.input[0].previous_output.vout = tx.input[0].previous_output.vout.wrapping_add(1);
         }
-        
+
         // Compute and return the new transaction ID
         tx.compute_txid()
     }

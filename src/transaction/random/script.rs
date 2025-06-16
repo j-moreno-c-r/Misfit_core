@@ -19,7 +19,6 @@ pub struct ScriptParams {
     script_type: Option<ScriptTypes>,
 }
 
-
 pub trait RandomScript {
     fn random(params: ScriptParams) -> ScriptBuf;
 }

@@ -14,7 +14,6 @@ pub struct InputParams {
     pub witness: Option<Witness>,
 }
 
-
 pub trait RandomInput {
     fn random(params: InputParams) -> TxIn;
 }
