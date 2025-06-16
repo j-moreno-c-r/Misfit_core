@@ -9,17 +9,19 @@ pub struct HeaderProcessor;
 impl HeaderProcessor {
     pub fn process_prev_block_hash(_hash: &BlockHash, randomize_hashes: bool) -> BlockHash {
         if randomize_hashes {
-            let random_hash = Self::generate_random_block_hash();
-            random_hash
+            
+            Self::generate_random_block_hash()
         } else {
-            let zero_hash = BlockHash::all_zeros();
-            zero_hash
+            
+            BlockHash::all_zeros()
         }
     }
 
     /// Process the timestamp
     pub fn process_timestamp(timestamp: u32, timestamp_offset: Option<i64>) -> u32 {
-        let modified_timestamp = if let Some(offset) = timestamp_offset {
+        
+        
+        if let Some(offset) = timestamp_offset {
             (timestamp as i64 + offset).max(0) as u32
         } else {
             let current_time = std::time::SystemTime::now()
@@ -27,16 +29,14 @@ impl HeaderProcessor {
                 .unwrap()
                 .as_secs() as u32;
             current_time.saturating_add(31_536_000)
-        };
-        
-        modified_timestamp
+        }
     }
 
     /// Process the nonce
     pub fn process_nonce(nonce: u32) -> u32 {
         // Bitwise NOT to invert all bits
-        let modified_nonce = !nonce;
-        modified_nonce
+        
+        !nonce
     }
 
     /// Generate a random block hash
@@ -89,7 +89,7 @@ impl HeaderProcessor {
     ) -> Header {
         use super::block::BlockField;
         
-        let mut modified_header = header.clone();
+        let mut modified_header = *header;
         let should_modify_all = fields_to_modify.contains(&BlockField::All);
 
         if should_modify_all || fields_to_modify.contains(&BlockField::Version) {

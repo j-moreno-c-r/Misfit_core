@@ -3,15 +3,11 @@ use secp256k1::rand::{self, Rng};
 
 use crate::transaction::{generator::GenerateTx, random::transaction::TxParams};
 
+#[derive(Default)]
 pub struct MerkleRootParams {
     pub txs: Option<Vec<Transaction>>,
 }
 
-impl Default for MerkleRootParams {
-    fn default() -> Self {
-        MerkleRootParams { txs: None }
-    }
-}
 
 pub trait MerkleRoot {
     fn from_transactions(txs: Vec<Transaction>) -> TxMerkleNode;

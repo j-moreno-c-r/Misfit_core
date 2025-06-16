@@ -62,15 +62,15 @@ impl Generator {
 
     pub fn decode_raw_transaction(raw_tx: String) -> Result<Transaction, Box<dyn std::error::Error>> {
         let decoder = decoder_tools::BitcoinTransactionDecoder::new();
-        let decoded = decoder.decode_hex(&raw_tx);
-        decoded    
+        
+        decoder.decode_hex(&raw_tx)    
     }
 
     pub fn decoder_block_header(block_header: String) -> Result<Header, Box<dyn std::error::Error>> {
         decoder_tools::BlockUtils::decode_header_from_hex(&block_header)
     }
     pub fn regtest_invocation(name_of_wallet:&str,mode_of_cli:&str ) -> RegtestManager{
-        RegtestManager::new(&name_of_wallet, &mode_of_cli)
+        RegtestManager::new(name_of_wallet, mode_of_cli)
     }
 
     pub fn break_transaction(transaction: String, cli_flags: Vec<String>) -> String {
@@ -142,7 +142,7 @@ impl Generator {
         };
 
         // Create block from header for processing
-        let original_block = decoder_tools::BlockUtils::create_minimal_block_from_header(decoded_header.clone());
+        let original_block = decoder_tools::BlockUtils::create_minimal_block_from_header(decoded_header);
 
         // Process the block using BlockProcessor
         let processor = block::block::BlockProcessor::new(processing_config.clone());
@@ -182,7 +182,7 @@ impl Generator {
         }
 
         // Display original header info
-        result.push_str(&format!("\nOriginal Block Header:\n"));
+        result.push_str(&"\nOriginal Block Header:\n".to_string());
         result.push_str(&format!("  Version: {}\n", decoded_header.version.to_consensus()));
         result.push_str(&format!("  Previous Block: {}\n", decoded_header.prev_blockhash));
         result.push_str(&format!("  Merkle Root: {}\n", decoded_header.merkle_root));
@@ -192,7 +192,7 @@ impl Generator {
         result.push_str(&format!("  Block Hash: {}\n", decoded_header.block_hash()));
 
         // Display broken header info
-        result.push_str(&format!("\nBroken Block Header:\n"));
+        result.push_str(&"\nBroken Block Header:\n".to_string());
         result.push_str(&format!("  Version: {}\n", broken_block.header.version.to_consensus()));
         result.push_str(&format!("  Previous Block: {}\n", broken_block.header.prev_blockhash));
         result.push_str(&format!("  Merkle Root: {}\n", broken_block.header.merkle_root));

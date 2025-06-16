@@ -6,12 +6,12 @@ impl MerkleRootProcessor {
     /// Process the merkle root
     pub fn process_merkle_root(_root: &TxMerkleNode, randomize_hashes: bool) -> TxMerkleNode {
         if randomize_hashes {
-            let random_merkle_root = Self::generate_random_merkle_root();
-            random_merkle_root
+            
+            Self::generate_random_merkle_root()
         } else {
             // Zero out the merkle root
-            let zero_root = TxMerkleNode::all_zeros();
-            zero_root
+            
+            TxMerkleNode::all_zeros()
         }
     }
 

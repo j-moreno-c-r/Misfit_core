@@ -9,8 +9,8 @@ impl VersionProcessor {
             override_version
         } else {
             // Default behavior: set version to maximum valid value
-            let modified_version = 0x3FFFFFFF;
-            modified_version
+            
+            0x3FFFFFFF
         }
     }
 

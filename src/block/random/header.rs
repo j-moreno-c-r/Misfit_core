@@ -12,6 +12,7 @@ use super::{
     version::RandomVersion,
 };
 
+#[derive(Default)]
 pub struct HeaderParams {
     pub version: Option<Version>,
     pub prev_blockhash: Option<BlockHash>,
@@ -22,19 +23,6 @@ pub struct HeaderParams {
     pub txs: Option<Vec<Transaction>>,
 }
 
-impl Default for HeaderParams {
-    fn default() -> Self {
-        HeaderParams {
-            version: None,
-            prev_blockhash: None,
-            merkle_root: None,
-            time: None,
-            bits: None,
-            nonce: None,
-            txs: None,
-        }
-    }
-}
 
 pub trait RandomHeader {
     fn random(params: HeaderParams) -> Header;
@@ -43,7 +31,7 @@ pub trait RandomHeader {
 impl RandomHeader for Header {
     fn random(params: HeaderParams) -> Header {
         Header {
-            version: params.version.unwrap_or_else(|| Version::random()),
+            version: params.version.unwrap_or_else(Version::random),
             prev_blockhash: params.prev_blockhash.unwrap_or_else(|| {
                 let mut h_params = HeaderParams::default();
                 h_params.prev_blockhash = Some(BlockHash::all_zeros());
@@ -59,7 +47,7 @@ impl RandomHeader for Header {
             time: params
                 .time
                 .unwrap_or_else(|| rand::thread_rng().gen::<u32>()),
-            bits: params.bits.unwrap_or_else(|| CompactTarget::random()),
+            bits: params.bits.unwrap_or_else(CompactTarget::random),
             nonce: params
                 .nonce
                 .unwrap_or_else(|| rand::thread_rng().gen::<u32>()),

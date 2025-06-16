@@ -14,15 +14,11 @@ pub enum ScriptTypes {
     P2WPKH,
     P2WSH,
 }
+#[derive(Default)]
 pub struct ScriptParams {
     script_type: Option<ScriptTypes>,
 }
 
-impl Default for ScriptParams {
-    fn default() -> Self {
-        ScriptParams { script_type: None }
-    }
-}
 
 pub trait RandomScript {
     fn random(params: ScriptParams) -> ScriptBuf;
