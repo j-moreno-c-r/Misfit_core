@@ -1,9 +1,9 @@
+use bitcoin::consensus::Decodable;
 use bitcoin::{
+    blockdata::block::{Block, Header},
     consensus::deserialize,
     Transaction,
-    blockdata::block::{Block, Header},
 };
-use bitcoin::consensus::Decodable;
 
 pub struct BitcoinTransactionDecoder;
 
@@ -46,7 +46,7 @@ impl Default for BitcoinTransactionDecoder {
     }
 }
 
-/* 
+/*
     /// Pretty print a decoded transaction
     pub fn print_transaction(&self, decoded: &DecodedTransaction) {
         println!("=== Bitcoin Transaction Details ===");
@@ -64,7 +64,7 @@ impl Default for BitcoinTransactionDecoder {
             println!("    Previous Output: {}:{}", input.previous_output.txid, input.previous_output.vout);
             println!("    Script Sig: {}", input.script_sig);
             println!("    Sequence: 0x{:08x}", input.sequence);
-            
+
             if !input.witness.is_empty() {
                 println!("    Witness ({} items):", input.witness.len());
                 for (j, witness_item) in input.witness.iter().enumerate() {
@@ -84,10 +84,6 @@ impl Default for BitcoinTransactionDecoder {
     }
 */
 
-
-
-
-
 // Decoding, utilities, and helper functions implementation
 pub struct BlockUtils;
 impl BlockUtils {
@@ -95,7 +91,11 @@ impl BlockUtils {
     pub fn decode_header_from_hex(hex_string: &str) -> Result<Header, Box<dyn std::error::Error>> {
         let bytes = hex::decode(hex_string)?;
         if bytes.len() != 80 {
-            return Err(format!("Invalid header length: expected 80 bytes, got {}", bytes.len()).into());
+            return Err(format!(
+                "Invalid header length: expected 80 bytes, got {}",
+                bytes.len()
+            )
+            .into());
         }
         let header = Header::consensus_decode(&mut &bytes[..])?;
         Ok(header)
@@ -132,10 +132,9 @@ impl BlockUtils {
     pub fn encode_header_to_hex(header: &Header) -> String {
         use bitcoin::consensus::Encodable;
         let mut bytes = Vec::new();
-        header.consensus_encode(&mut bytes).expect("Failed to encode header");
+        header
+            .consensus_encode(&mut bytes)
+            .expect("Failed to encode header");
         hex::encode(bytes)
     }
-
-
 }
-

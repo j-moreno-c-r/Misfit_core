@@ -7,8 +7,8 @@ impl BitsProcessor {
     /// Process the bits (difficulty target)
     pub fn process_bits(bits: u32) -> u32 {
         // XOR with mask to modify difficulty
-        let modified_bits = bits ^ 0x00FFFFFF;
-        modified_bits
+
+        bits ^ 0x00FFFFFF
     }
 
     /// Convert consensus bits to CompactTarget type
@@ -35,11 +35,11 @@ impl BitsProcessor {
     pub fn generate_random_bits() -> u32 {
         use rand::Rng;
         let mut rng = rand::rng();
-        
+
         // Generate within reasonable difficulty range
         let exponent = rng.random_range(0x1d..=0x20); // Reasonable exponent range
         let mantissa = rng.random_range(0x008000..=0xffffff); // Valid mantissa range
-        
+
         (exponent << 24) | mantissa
     }
 
@@ -61,7 +61,7 @@ impl BitsProcessor {
     pub fn bits_to_target(bits: u32) -> u32 {
         let exponent = (bits >> 24) & 0xff;
         let mantissa = bits & 0xffffff;
-        
+
         if exponent <= 3 {
             mantissa >> (8 * (3 - exponent))
         } else {
@@ -95,9 +95,9 @@ impl BitsProcessor {
     pub fn is_valid_bits(bits: u32) -> bool {
         let exponent = (bits >> 24) & 0xff;
         let mantissa = bits & 0xffffff;
-        
+
         // Basic validation: exponent should be reasonable, mantissa non-zero for valid target
-        exponent >= 0x03 && exponent <= 0x20 && mantissa != 0
+        (0x03..=0x20).contains(&exponent) && mantissa != 0
     }
 
     /// Check if bits represent minimum difficulty
@@ -107,8 +107,7 @@ impl BitsProcessor {
 
     /// Flip specific bits in the difficulty target
     pub fn flip_bits_pattern(bits: u32, pattern: u32) -> u32 {
-        let modified = bits ^ pattern;
-        modified
+        bits ^ pattern
     }
 
     /// Set bits to a specific difficulty level

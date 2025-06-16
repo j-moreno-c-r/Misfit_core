@@ -6,22 +6,12 @@ use super::{
     transaction::{RandomTransacion, TxParams},
 };
 
+#[derive(Default)]
 pub struct InputParams {
     pub outpoint: Option<OutPoint>,
     pub script: Option<ScriptBuf>,
     pub sequence: Option<Sequence>,
     pub witness: Option<Witness>,
-}
-
-impl Default for InputParams {
-    fn default() -> Self {
-        InputParams {
-            outpoint: None,
-            script: None,
-            sequence: None,
-            witness: None,
-        }
-    }
 }
 
 pub trait RandomInput {
@@ -48,16 +38,16 @@ impl RandomInput for TxIn {
             })
             .compute_txid();
 
-            return OutPoint {
+            OutPoint {
                 txid: tx_id,
                 vout: rand::thread_rng().gen::<u32>(),
-            };
+            }
         });
-        let script = params.script.unwrap_or(ScriptBuf::default()); // TODO: When random, get script from outpoint
+        let script = params.script.unwrap_or_default(); // TODO: When random, get script from outpoint
         let sequence = params
             .sequence
             .unwrap_or_else(|| Sequence(rand::thread_rng().gen::<u32>()));
-        let witness = params.witness.unwrap_or(Witness::default());
+        let witness = params.witness.unwrap_or_default();
 
         TxIn {
             previous_output: outpoint,

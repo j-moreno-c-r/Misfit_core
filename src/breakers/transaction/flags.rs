@@ -1,7 +1,7 @@
 // Define available invalidation flags
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum InvalidationFlag {
-    Version,    
+    Version,
     InputTxid,
     InputVout,
     InputScriptSig,
