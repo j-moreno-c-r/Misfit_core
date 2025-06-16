@@ -5,13 +5,7 @@ pub struct VersionProcessor;
 impl VersionProcessor {
     /// Process the version of the block with optional override
     pub fn process_version(_version: i32, version_override: Option<i32>) -> i32 {
-        if let Some(override_version) = version_override {
-            override_version
-        } else {
-            // Default behavior: set version to maximum valid value
-
-            0x3FFFFFFF
-        }
+        version_override.unwrap_or(0x3FFFFFFF)
     }
 
     /// Convert consensus version to Bitcoin Version type

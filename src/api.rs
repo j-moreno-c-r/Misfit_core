@@ -225,7 +225,7 @@ impl Generator {
         }
 
         // Display original header info
-        result.push_str(&"\nOriginal Block Header:\n".to_string());
+        result.push_str("\nOriginal Block Header:\n");
         result.push_str(&format!(
             "  Version: {}\n",
             decoded_header.version.to_consensus()
@@ -244,7 +244,7 @@ impl Generator {
         result.push_str(&format!("  Block Hash: {}\n", decoded_header.block_hash()));
 
         // Display broken header info
-        result.push_str(&"\nBroken Block Header:\n".to_string());
+        result.push_str("\nBroken Block Header:\n");
         result.push_str(&format!(
             "  Version: {}\n",
             broken_block.header.version.to_consensus()
