@@ -12,17 +12,17 @@ use misfit_core::breakers::{decoder_tools, transaction, block};
 pub struct Generator {}
 
 impl Generator {
-    pub fn block(tx_count:u32) -> String {
+    pub fn block(tx_count: u32) -> String {
         let mut txs: Vec<Transaction> = vec![];
         let mut raw_tx: Vec<String> = vec![];
         let mut tx_ids: Vec<String> = vec![];
 
         for _c in 0..tx_count {
-            let tx = GenerateTx::valid_random(TxParams::default());
-            let raw_transaction = hex::encode(encode::serialize(&tx)).to_string();
-            let txid = tx.compute_txid().to_string();
+            let tx_info = GenerateTx::valid_random(TxParams::default());
+            let raw_transaction = hex::encode(encode::serialize(&tx_info)).to_string();
+            let txid = tx_info.compute_txid().to_string();
 
-            txs.push(tx);
+            txs.push(tx_info);
             raw_tx.push(raw_transaction);
             tx_ids.push(txid);
         }
@@ -45,9 +45,9 @@ impl Generator {
         let mut txid: Vec<String> = vec![];
 
         for _c in 0..count {
-            let tx = GenerateTx::valid_random(TxParams::default());
-            let raw_transaction = hex::encode(encode::serialize(&tx)).to_string();
-            let tx_id = tx.compute_txid().to_string();
+            let tx_info = GenerateTx::valid_random(TxParams::default());
+            let raw_transaction = hex::encode(encode::serialize(&tx_info)).to_string();
+            let tx_id = tx_info.compute_txid().to_string();
 
             raw_tx.push(raw_transaction);
             txid.push(tx_id);

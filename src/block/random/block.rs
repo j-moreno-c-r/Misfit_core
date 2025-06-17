@@ -1,7 +1,10 @@
 use bitcoin::{block::Header, Block, Transaction};
 use secp256k1::rand::{self, Rng};
 
-use crate::transaction::{generator::GenerateTx, random::transaction::TxParams};
+use crate::transaction::{
+    generator::GenerateTx, 
+    random::transaction::{TxParams}
+};
 
 use super::header::{HeaderParams, RandomHeader};
 
@@ -30,7 +33,8 @@ impl RandomBlock for Block {
 
             let mut txs = vec![];
             for _ in 0..random {
-                txs.push(GenerateTx::valid_random(TxParams::default()));
+                let tx_info = GenerateTx::valid_random(TxParams::default());
+                txs.push(tx_info);
             }
 
             txs
@@ -45,7 +49,7 @@ impl RandomBlock for Block {
 
         Block {
             header,
-            txdata: tx_data.clone(),
+            txdata: tx_data,
         }
     }
 }
