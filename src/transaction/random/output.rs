@@ -1,12 +1,12 @@
-use bitcoin::{Amount, ScriptBuf, TxOut, PrivateKey, secp256k1::{All, Secp256k1}};
+use bitcoin::{Amount, NetworkKind, PrivateKey, ScriptBuf, TxOut};
 use secp256k1::rand::{self, Rng};
 
 use super::script::{RandomScript, ScriptParams, ScriptTypes};
 
 pub struct OutputParams {
     pub value: Option<Amount>,
-    pub(crate) script_pubkey: Option<ScriptBuf>,
     pub script_params: Option<ScriptParams>,
+    pub private_key: Option<PrivateKey>,
 }
 
 pub struct OutputInfo {
@@ -18,34 +18,36 @@ impl Default for OutputParams {
     fn default() -> Self {
         OutputParams {
             value: None,
-            script_pubkey: None,
             script_params: None,
+            private_key: None,
         }
     }
 }
 
 pub trait RandomOutput {
-    fn random(params: OutputParams, curve: &Secp256k1<All>, privatekey: &PrivateKey) -> (TxOut, ScriptTypes);
+    fn random(params: OutputParams) -> (TxOut, ScriptTypes);
 }
 
 impl RandomOutput for TxOut {
-    fn random(params: OutputParams, curve: &Secp256k1<All>, privatekey: &PrivateKey) -> (TxOut, ScriptTypes) {
+    fn random(params: OutputParams) -> (TxOut, ScriptTypes) {
         let amount = params
             .value
             .unwrap_or_else(|| Amount::from_sat(rand::thread_rng().gen::<u64>()));
 
-        let (script, script_type) = match params.script_pubkey {
-            Some(script) => (script, ScriptTypes::P2PKH),
-            None => ScriptBuf::random(
-                params.script_params.unwrap_or_default(),
-                curve,
-                privatekey
-            ),
-        };
+        let private_key = params
+            .private_key
+            .unwrap_or_else(|| PrivateKey::generate(NetworkKind::Main));
+
+        let script_params = params.script_params.unwrap_or(ScriptParams {
+            script_type: None,
+            private_key: Some(private_key),
+        });
+
+        let (script, script_type) = ScriptBuf::random(script_params);
 
         let txout = TxOut {
             value: amount,
-            script_pubkey: script
+            script_pubkey: script,
         };
 
         (txout, script_type)

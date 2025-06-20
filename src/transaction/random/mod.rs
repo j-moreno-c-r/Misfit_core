@@ -4,3 +4,4 @@ pub mod output;
 pub mod script;
 pub mod transaction;
 pub mod version;
+pub mod witness;
