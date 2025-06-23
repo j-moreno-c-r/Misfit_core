@@ -16,7 +16,6 @@ pub enum ScriptTypes {
     P2WPKH,
     P2WSH,
 }
-
 pub struct ScriptParams {
     pub script_type: Option<ScriptTypes>,
     pub private_key: Option<PrivateKey>,

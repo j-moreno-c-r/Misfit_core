@@ -6,14 +6,9 @@ use crate::transaction::{
     random::transaction::{TxParams},
 };
 
+#[derive(Default)]
 pub struct MerkleRootParams {
     pub txs: Option<Vec<Transaction>>,
-}
-
-impl Default for MerkleRootParams {
-    fn default() -> Self {
-        MerkleRootParams { txs: None }
-    }
 }
 
 pub trait MerkleRoot {

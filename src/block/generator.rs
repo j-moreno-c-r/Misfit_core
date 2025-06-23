@@ -1,4 +1,3 @@
-use bitcoin::Block;
 use super::random::block::{BlockParams, RandomBlock};
 use bitcoin::OutPoint;
 

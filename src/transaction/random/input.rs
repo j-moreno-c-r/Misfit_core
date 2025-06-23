@@ -11,6 +11,7 @@ use super::{
     transaction::{RandomTransacion, TxParams},
 };
 
+#[derive(Default)]
 pub struct InputParams {
     pub outpoint: Option<OutPoint>,
     pub script: Option<(ScriptBuf, ScriptTypes)>,

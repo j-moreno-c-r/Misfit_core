@@ -1,6 +1,6 @@
-use bitcoin::blockdata::block::{Block, Header};
-use super::header::HeaderProcessor;
 use super::decoder_tools::BlockUtils;
+use super::header::HeaderProcessor;
+use bitcoin::blockdata::block::{Block, Header};
 
 // Re-export the enum and config from the original design
 #[derive(Debug, Clone, PartialEq)]
@@ -52,8 +52,8 @@ impl BlockProcessor {
 
     // Check if a specific field should be processed
     fn _should_process_field(&self, field: &BlockField) -> bool {
-        self.config.fields_to_modify.contains(&BlockField::All) ||
-        self.config.fields_to_modify.contains(field)
+        self.config.fields_to_modify.contains(&BlockField::All)
+            || self.config.fields_to_modify.contains(field)
     }
 
     // Process the entire block header based on configuration
@@ -70,7 +70,7 @@ impl BlockProcessor {
     // Process an entire block
     pub fn process_block(&self, block: &Block) -> Block {
         let modified_header = self.process_block_header(&block.header);
-        
+
         Block {
             header: modified_header,
             txdata: block.txdata.clone(),
@@ -154,7 +154,7 @@ impl BlockBreaker {
 
     // Break multiple fields with custom settings
     pub fn break_fields_with_settings(
-        block: &Block, 
+        block: &Block,
         fields: Vec<BlockField>,
         version_override: Option<i32>,
         timestamp_offset: Option<i64>,
@@ -172,10 +172,8 @@ impl BlockBreaker {
     // Create a completely randomized block header
     pub fn create_random_header() -> Header {
         use super::{
+            bits::BitsProcessor, header::HeaderProcessor, merkle_root::MerkleRootProcessor,
             version::VersionProcessor,
-            header::HeaderProcessor,
-            merkle_root::MerkleRootProcessor,
-            bits::BitsProcessor,
         };
         use bitcoin::{blockdata::block::Version, pow::CompactTarget};
 

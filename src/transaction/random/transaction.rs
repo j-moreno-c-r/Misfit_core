@@ -8,6 +8,7 @@ use bitcoin::{
     absolute::LockTime, transaction::Version, NetworkKind, PrivateKey, Transaction, TxIn, TxOut,
 };
 
+#[derive(Default)]
 pub struct TxParams {
     pub version: Option<Version>,
     pub lock_time: Option<LockTime>,
