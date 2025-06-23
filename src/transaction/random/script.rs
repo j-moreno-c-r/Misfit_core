@@ -1,10 +1,12 @@
 use bitcoin::{
     hashes::Hash,
-    key::{Keypair, Secp256k1, TweakedKeypair, TweakedPublicKey},
+    key::{Keypair, TweakedKeypair, TweakedPublicKey},
+    secp256k1::Secp256k1,
     NetworkKind, PrivateKey, PublicKey, ScriptBuf, ScriptHash, WScriptHash, XOnlyPublicKey,
 };
 use secp256k1::rand::{self, Rng};
 
+#[derive(Clone)]
 pub enum ScriptTypes {
     P2PK,
     P2PKH,
@@ -14,17 +16,26 @@ pub enum ScriptTypes {
     P2WPKH,
     P2WSH,
 }
-#[derive(Default)]
 pub struct ScriptParams {
-    script_type: Option<ScriptTypes>,
+    pub script_type: Option<ScriptTypes>,
+    pub private_key: Option<PrivateKey>,
+}
+
+impl Default for ScriptParams {
+    fn default() -> Self {
+        ScriptParams {
+            script_type: None,
+            private_key: None,
+        }
+    }
 }
 
 pub trait RandomScript {
-    fn random(params: ScriptParams) -> ScriptBuf;
+    fn random(params: ScriptParams) -> (ScriptBuf, ScriptTypes);
 }
 
 impl RandomScript for ScriptBuf {
-    fn random(params: ScriptParams) -> ScriptBuf {
+    fn random(params: ScriptParams) -> (ScriptBuf, ScriptTypes) {
         let script_type =
             params
                 .script_type
@@ -38,17 +49,17 @@ impl RandomScript for ScriptBuf {
                     _ => ScriptTypes::P2WSH,
                 });
 
-        match script_type {
+        let private_key = params
+            .private_key
+            .unwrap_or_else(|| PrivateKey::generate(NetworkKind::Main));
+
+        let script = match script_type {
             ScriptTypes::P2PK => ScriptBuf::new_p2pk(&PublicKey::from_private_key(
                 &Secp256k1::new(),
-                &PrivateKey::generate(NetworkKind::Main),
+                &private_key,
             )),
             ScriptTypes::P2PKH => ScriptBuf::new_p2pkh(
-                &PublicKey::from_private_key(
-                    &Secp256k1::new(),
-                    &PrivateKey::generate(NetworkKind::Main),
-                )
-                .pubkey_hash(),
+                &PublicKey::from_private_key(&Secp256k1::new(), &private_key).pubkey_hash(),
             ),
             ScriptTypes::P2SH => ScriptBuf::new_p2sh(&ScriptHash::all_zeros()),
             ScriptTypes::P2TR => ScriptBuf::new_p2tr(
@@ -66,14 +77,12 @@ impl RandomScript for ScriptBuf {
                 )),
             ),
             ScriptTypes::P2WPKH => ScriptBuf::new_p2wpkh(
-                &PublicKey::from_private_key(
-                    &Secp256k1::new(),
-                    &PrivateKey::generate(NetworkKind::Main),
-                )
-                .wpubkey_hash()
-                .unwrap(),
+                &PublicKey::from_private_key(&Secp256k1::new(), &private_key)
+                    .wpubkey_hash()
+                    .unwrap(),
             ),
             ScriptTypes::P2WSH => ScriptBuf::new_p2wsh(&WScriptHash::all_zeros()),
-        }
+        };
+        (script, script_type)
     }
 }

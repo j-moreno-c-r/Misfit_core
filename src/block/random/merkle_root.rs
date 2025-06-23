@@ -1,7 +1,10 @@
 use bitcoin::{merkle_tree, Transaction, TxMerkleNode};
 use secp256k1::rand::{self, Rng};
 
-use crate::transaction::{generator::GenerateTx, random::transaction::TxParams};
+use crate::transaction::{
+    generator::GenerateTx,
+    random::transaction::{TxParams},
+};
 
 #[derive(Default)]
 pub struct MerkleRootParams {
@@ -23,11 +26,12 @@ impl MerkleRoot for TxMerkleNode {
 
     fn random(params: MerkleRootParams) -> TxMerkleNode {
         let txs = params.txs.unwrap_or_else(|| {
-            let random = rand::thread_rng().gen_range(0..10);
+            let random = rand::thread_rng().gen_range(1..10);
 
             let mut txs = vec![];
             for _ in 0..random {
-                txs.push(GenerateTx::valid_random(TxParams::default()));
+                let tx_info = GenerateTx::valid_random(TxParams::default());
+                txs.push(tx_info);
             }
 
             txs

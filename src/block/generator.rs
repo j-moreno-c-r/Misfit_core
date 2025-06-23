@@ -1,10 +1,12 @@
 use super::random::block::{BlockParams, RandomBlock};
-use bitcoin::Block;
 use bitcoin::OutPoint;
 
 use crate::transaction::{
     generator::GenerateTx,
-    random::{input::InputParams, transaction::TxParams},
+    random::{
+        input::InputParams,
+        transaction::{TxParams},
+    },
 };
 
 pub struct GenerateBlock {}
@@ -17,10 +19,10 @@ impl GenerateBlock {
         let mut coinbase_params = TxParams::default();
         coinbase_params.input = Some(input_params);
 
-        let coinbase = GenerateTx::valid_random(coinbase_params);
+        let coinbase_info = GenerateTx::valid_random(coinbase_params);
 
         let mut txs = params.txs.take().unwrap_or_default();
-        txs.insert(0, coinbase);
+        txs.insert(0, coinbase_info);
         params.txs = Some(txs);
 
         Block::random(params)

@@ -1,7 +1,10 @@
 use bitcoin::{block::Header, Block, Transaction};
 use secp256k1::rand::{self, Rng};
 
-use crate::transaction::{generator::GenerateTx, random::transaction::TxParams};
+use crate::transaction::{
+    generator::GenerateTx, 
+    random::transaction::{TxParams}
+};
 
 use super::header::{HeaderParams, RandomHeader};
 
@@ -18,11 +21,12 @@ pub trait RandomBlock {
 impl RandomBlock for Block {
     fn random(params: BlockParams) -> Block {
         let tx_data = params.txs.unwrap_or_else(|| {
-            let random = rand::thread_rng().gen_range(0..10);
+            let random = rand::thread_rng().gen_range(1..10);
 
             let mut txs = vec![];
             for _ in 0..random {
-                txs.push(GenerateTx::valid_random(TxParams::default()));
+                let tx_info = GenerateTx::valid_random(TxParams::default());
+                txs.push(tx_info);
             }
 
             txs
@@ -37,7 +41,7 @@ impl RandomBlock for Block {
 
         Block {
             header,
-            txdata: tx_data.clone(),
+            txdata: tx_data,
         }
     }
 }

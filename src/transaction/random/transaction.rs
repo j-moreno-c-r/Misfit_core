@@ -4,14 +4,29 @@ use super::{
     output::{OutputParams, RandomOutput},
     version::RandomVersion,
 };
-use bitcoin::{absolute::LockTime, transaction::Version, Transaction, TxIn, TxOut};
+use bitcoin::{
+    absolute::LockTime, transaction::Version, NetworkKind, PrivateKey, Transaction, TxIn, TxOut,
+};
 
 #[derive(Default)]
 pub struct TxParams {
-    pub(crate) version: Option<Version>,
-    pub(crate) lock_time: Option<LockTime>,
-    pub(crate) input: Option<InputParams>,
-    pub(crate) output: Option<OutputParams>,
+    pub version: Option<Version>,
+    pub lock_time: Option<LockTime>,
+    pub input: Option<InputParams>,
+    pub output: Option<OutputParams>,
+    pub private_key: Option<PrivateKey>,
+}
+
+impl Default for TxParams {
+    fn default() -> Self {
+        TxParams {
+            version: None,
+            lock_time: None,
+            input: None,
+            output: None,
+            private_key: None,
+        }
+    }
 }
 
 pub trait RandomTransacion {
@@ -20,14 +35,27 @@ pub trait RandomTransacion {
 
 impl RandomTransacion for Transaction {
     fn random(params: TxParams) -> Transaction {
-        let input_params = params.input.unwrap_or_default();
-        let output_params = params.output.unwrap_or_default();
+        let private_key = params
+            .private_key
+            .unwrap_or_else(|| PrivateKey::generate(NetworkKind::Main));
 
-        Transaction {
-            version: params.version.unwrap_or_else(Version::random),
-            lock_time: params.lock_time.unwrap_or_else(LockTime::random),
-            input: vec![TxIn::random(input_params)],
-            output: vec![TxOut::random(output_params)],
-        }
+        let mut input_params = params.input.unwrap_or_default();
+        let mut output_params = params.output.unwrap_or_default();
+
+        input_params.private_key = Some(private_key);
+        output_params.private_key = Some(private_key);
+
+        // Gerar input e output com suas informações
+        let input_info = TxIn::random(input_params);
+        let output_info = TxOut::random(output_params);
+
+        let transaction = Transaction {
+            version: params.version.unwrap_or_else(|| Version::random()),
+            lock_time: params.lock_time.unwrap_or_else(|| LockTime::random()),
+            input: vec![input_info.clone()],
+            output: vec![output_info.0.clone()],
+        };
+
+        transaction
     }
 }
