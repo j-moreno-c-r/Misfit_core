@@ -2,5 +2,5 @@ mod cli;
 mod api;
 mod tests;
 fn main() {
-    cli::handle();
+    let _ = cli::handle();
 }
