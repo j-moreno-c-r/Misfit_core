@@ -6,76 +6,70 @@ mod tests {
     #[test]
     fn test_generate_single_transaction() {
         let result = Generator::transaction(1);
-        assert!(result.contains("Raw Transactions:"));
-        assert!(result.contains("TXIDs:"));
-        assert!(result.contains("---"));
-        
-        // Split by separator and check structure
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 2);
-        
-        // Verify sections have content
-        assert!(sections[0].starts_with("Raw Transactions:"));
-        assert!(sections[1].starts_with("TXIDs:"));
+        let json: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert!(json.get("raw_transactions").is_some());
+        assert!(json.get("txids").is_some());
+        let raw_txs = json["raw_transactions"].as_array().unwrap();
+        let txids = json["txids"].as_array().unwrap();
+        assert_eq!(raw_txs.len(), 1);
+        assert_eq!(txids.len(), 1);
     }
 
     #[test]
     fn test_generate_multiple_transactions() {
         let tx_count = 3;
         let result = Generator::transaction(tx_count);
-        
-        // Check that the result contains expected sections
-        assert!(result.contains("Raw Transactions:"));
-        assert!(result.contains("TXIDs:"));
-        
-        // Count occurrences to verify we have the right number of transactions
-        // This is a basic check - the exact format depends on the debug implementation
-        let raw_tx_section = result.split("TXIDs:").next().unwrap();
-        let txid_section = result.split("TXIDs:").nth(1).unwrap();
-        
-        // Both sections should contain content
-        assert!(!raw_tx_section.trim().is_empty());
-        assert!(!txid_section.trim().is_empty());
+        let json: serde_json::Value = serde_json::from_str(&result).unwrap();
+        let raw_txs = json["raw_transactions"].as_array().unwrap();
+        let txids = json["txids"].as_array().unwrap();
+        assert_eq!(raw_txs.len(), tx_count as usize);
+        assert_eq!(txids.len(), tx_count as usize);
     }
 
     #[test]
     fn test_generate_zero_transactions() {
         let result = Generator::transaction(0);
-        
-        // Should still have structure but with empty arrays
-        assert!(result.contains("Raw Transactions:"));
-        assert!(result.contains("TXIDs:"));
+        let json: serde_json::Value = serde_json::from_str(&result).unwrap();
+        let raw_txs = json["raw_transactions"].as_array().unwrap();
+        let txids = json["txids"].as_array().unwrap();
+        assert_eq!(raw_txs.len(), 0);
+        assert_eq!(txids.len(), 0);
     }
 
-      #[test]
+    #[test]
     fn test_generate_one_block_with_one_transaction() {
         let result = Generator::block(1);
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-        assert!(result.contains("Header"));
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));
+        let json: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert!(json.get("header").is_some());
+        assert!(json.get("header_hex").is_some());
+        let raw_txs = json["raw_transactions"].as_array().unwrap();
+        let txids = json["txids"].as_array().unwrap();
+        assert_eq!(raw_txs.len(), 1);
+        assert_eq!(txids.len(), 1);
     }
-      #[test]
+
+    #[test]
     fn generate_zero_tx_block() {
         let result = Generator::block(0);
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-        assert!(result.contains("Header"));
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));  
+        let json: serde_json::Value = serde_json::from_str(&result).unwrap();
+        assert!(json.get("header").is_some());
+        assert!(json.get("header_hex").is_some());
+        let raw_txs = json["raw_transactions"].as_array().unwrap();
+        let txids = json["txids"].as_array().unwrap();
+        assert_eq!(raw_txs.len(), 0);
+        assert_eq!(txids.len(), 0);
     }
 
     #[test]
     fn test_generate_block_with_multiple_transactions() {
         let tx_count = 10;
         let result = Generator::block(tx_count);
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
+        let json: serde_json::Value = serde_json::from_str(&result).unwrap();
+        let raw_txs = json["raw_transactions"].as_array().unwrap();
+        let txids = json["txids"].as_array().unwrap();
+        assert_eq!(raw_txs.len(), tx_count as usize);
+        assert_eq!(txids.len(), tx_count as usize);
     }
-
 
     #[test]
     fn test_parse_cli_flags_to_invalidation_flags() {
