@@ -12,6 +12,7 @@ use ratatui::{
     prelude::*,
     widgets::*,
     Terminal,
+    text::{Span, Line}
 };
 use clap::{Parser, Subcommand};
 use crate::api::Generator;
@@ -113,12 +114,14 @@ struct App {
     input_buffer: String,
     awaiting_input: Option<InputType>,
     regtest_manager: RegtestManager,
+    output_selected_index: Option<usize>, // Para seleção de linha do output
 }
 
 #[derive(Clone)]
 struct CommandItem {
     name: String,
     description: String,
+    shortcut: Option<char>,
     command_type: CommandType,
 }
 
@@ -143,6 +146,7 @@ enum InputType {
 enum InputMode {
     Normal,
     Input,
+    OutputSelect,
 }
 
 impl App {
@@ -152,63 +156,75 @@ impl App {
         App {
             command_items: vec![
                 CommandItem {
-                    name: "Help".to_string(),
+                    name: "Help (h)".to_string(),
                     description: "Show help message".to_string(),
+                    shortcut: Some('h'),
                     command_type: CommandType::Simple(Commands::Help),
                 },
                 CommandItem {
-                    name: "Clear".to_string(),
+                    name: "Clear (c)".to_string(),
                     description: "Clear output".to_string(),
+                    shortcut: Some('c'),
                     command_type: CommandType::Simple(Commands::Clear),
                 },
                 CommandItem {
-                    name: "Decode Transaction".to_string(),
+                    name: "Decode Transaction (d)".to_string(),
                     description: "Decode a raw transaction".to_string(),
+                    shortcut: Some('d'),
                     command_type: CommandType::RequiresInput(InputType::DecodeTransaction),
                 },
                 CommandItem {
-                    name: "Decode Block".to_string(),
+                    name: "Decode Block (D)".to_string(),
                     description: "Decode a block header".to_string(),
+                    shortcut: Some('D'),
                     command_type: CommandType::RequiresInput(InputType::DecodeBlock),
                 },
                 CommandItem {
-                    name: "Break Transaction".to_string(),
+                    name: "Break Transaction (b)".to_string(),
                     description: "Break/invalidate transaction fields".to_string(),
+                    shortcut: Some('b'),
                     command_type: CommandType::RequiresInput(InputType::BreakTransaction),
                 },
                 CommandItem {
-                    name: "Break Block".to_string(),
+                    name: "Break Block (B)".to_string(),
                     description: "Break/invalidate block fields".to_string(),
+                    shortcut: Some('B'),
                     command_type: CommandType::RequiresInput(InputType::BreakBlock),
                 },
                 CommandItem {
-                    name: "Generate Transaction".to_string(),
+                    name: "Generate Transaction (g)".to_string(),
                     description: "Generate one or more transactions".to_string(),
+                    shortcut: Some('g'),
                     command_type: CommandType::RequiresInput(InputType::GenerateTx),
                 },
                 CommandItem {
-                    name: "Generate Block".to_string(),
+                    name: "Generate Block (G)".to_string(),
                     description: "Generate new block with transactions".to_string(),
+                    shortcut: Some('G'),
                     command_type: CommandType::RequiresInput(InputType::GenerateBlock),
                 },
                 CommandItem {
-                    name: "Get Block by Height".to_string(),
+                    name: "Get Block by Height (k)".to_string(),
                     description: "Get block at specific height".to_string(),
+                    shortcut: Some('k'),
                     command_type: CommandType::RequiresInput(InputType::GetBlockByHeight),
                 },
                 CommandItem {
-                    name: "Start Regtest".to_string(),
+                    name: "Start Regtest (r)".to_string(),
                     description: "Start the regtest node".to_string(),
+                    shortcut: Some('r'),
                     command_type: CommandType::Simple(Commands::RegtestStart),
                 },
                 CommandItem {
-                    name: "Stop Regtest".to_string(),
+                    name: "Stop Regtest (s)".to_string(),
                     description: "Stop the regtest node".to_string(),
+                    shortcut: Some('s'),
                     command_type: CommandType::Simple(Commands::RegtestStop),
                 },
                 CommandItem {
-                    name: "Exit".to_string(),
+                    name: "Exit (q)".to_string(),
                     description: "Exit the application".to_string(),
+                    shortcut: Some('q'),
                     command_type: CommandType::Simple(Commands::Exit),
                 },
             ],
@@ -219,6 +235,7 @@ impl App {
             input_buffer: String::new(),
             awaiting_input: None,
             regtest_manager,
+            output_selected_index: None,
         }
     }
 
@@ -441,28 +458,28 @@ impl App {
         self.output_lines.push("📖 Bitcoin CLI Tool Help".to_string());
         self.output_lines.push("".to_string());
         self.output_lines.push("🔧 Utils:".to_string());
-        self.output_lines.push("  help                    - Show this help message".to_string());
-        self.output_lines.push("  clear                   - Clear terminal output".to_string());
-        self.output_lines.push("  exit                    - Exit the application".to_string());
+        self.output_lines.push("  help (h)                    - Show this help message".to_string());
+        self.output_lines.push("  clear (c)                   - Clear terminal output".to_string());
+        self.output_lines.push("  exit (q)                    - Exit the application".to_string());
         self.output_lines.push("".to_string());
         self.output_lines.push("🔍 Decode:".to_string());
-        self.output_lines.push("  decode-transaction      - Decode a raw transaction".to_string());
-        self.output_lines.push("  decode-block           - Decode a block header".to_string());
+        self.output_lines.push("  decode-transaction (d)      - Decode a raw transaction".to_string());
+        self.output_lines.push("  decode-block (D)            - Decode a block header".to_string());
         self.output_lines.push("".to_string());
         self.output_lines.push("🔨 Break/Invalidate:".to_string());
-        self.output_lines.push("  break-transaction      - Break/invalidate transaction fields".to_string());
-        self.output_lines.push("  break-block           - Break/invalidate block fields".to_string());
+        self.output_lines.push("  break-transaction (b)       - Break/invalidate transaction fields".to_string());
+        self.output_lines.push("  break-block (B)             - Break/invalidate block fields".to_string());
         self.output_lines.push("".to_string());
         self.output_lines.push("🏗️ Generate:".to_string());
-        self.output_lines.push("  generate-transaction   - Generate one or more transactions".to_string());
-        self.output_lines.push("  generate-block        - Generate new block with transactions".to_string());
+        self.output_lines.push("  generate-transaction (g)    - Generate one or more transactions".to_string());
+        self.output_lines.push("  generate-block (G)          - Generate new block with transactions".to_string());
         self.output_lines.push("".to_string());
         self.output_lines.push("⚙️ Regtest:".to_string());
-        self.output_lines.push("  start-regtest         - Start the regtest node".to_string());
-        self.output_lines.push("  stop-regtest          - Stop the regtest node".to_string());
-        self.output_lines.push("  get-block-by-height   - Get block at specific height".to_string());
+        self.output_lines.push("  start-regtest (r)           - Start the regtest node".to_string());
+        self.output_lines.push("  stop-regtest (s)            - Stop the regtest node".to_string());
+        self.output_lines.push("  get-block-by-height (k)     - Get block at specific height".to_string());
         self.output_lines.push("".to_string());
-        self.output_lines.push("Navigation: ↑/↓ arrows, Enter to select, 'q' to quit".to_string());
+        self.output_lines.push("Navigation: ↑/↓ arrows, Enter to select, Tab: Output select, y: Copy output, q: Quit".to_string());
     }
 }
 
@@ -488,8 +505,10 @@ pub fn handle() -> io::Result<()> {
     
     result
 }
-
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
+    use copypasta::{ClipboardContext, ClipboardProvider};
+    let mut clipboard = ClipboardContext::new().unwrap();
+
     loop {
         // Handle input events
         if event::poll(Duration::from_millis(100))? {
@@ -511,8 +530,20 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                                 // Execute command on Enter
                                 KeyCode::Enter => app.execute_command(),
-                                // Quit application
-                                KeyCode::Char('q') => app.should_quit = true,
+                                // Atalhos de teclado para comandos
+                                KeyCode::Char(c) => {
+                                    if let Some(idx) = app.command_items.iter().position(|item| item.shortcut == Some(c)) {
+                                        app.selected_index = idx;
+                                        app.execute_command();
+                                    } else if c == 'q' {
+                                        app.should_quit = true;
+                                    }
+                                }
+                                // Alternar para seleção de output
+                                KeyCode::Tab => {
+                                    app.input_mode = InputMode::OutputSelect;
+                                    app.output_selected_index = Some(app.output_lines.len().saturating_sub(1));
+                                }
                                 _ => {}
                             }
                         }
@@ -529,11 +560,45 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 _ => {}
                             }
                         }
+                        InputMode::OutputSelect => {
+                            match key.code {
+                                KeyCode::Up => {
+                                    if let Some(idx) = app.output_selected_index {
+                                        if idx > 0 {
+                                            app.output_selected_index = Some(idx - 1);
+                                        }
+                                    }
+                                }
+                                KeyCode::Down => {
+                                    if let Some(idx) = app.output_selected_index {
+                                        if idx < app.output_lines.len().saturating_sub(1) {
+                                            app.output_selected_index = Some(idx + 1);
+                                        }
+                                    }
+                                }
+                                KeyCode::Char('y') => {
+                                    if let Some(idx) = app.output_selected_index {
+                                        if let Some(line) = app.output_lines.get(idx) {
+                                            let _ = clipboard.set_contents(line.clone());
+                                            app.output_lines.push(format!("📋 Linha copiada para o clipboard!"));
+                                        }
+                                    }
+                                }
+                                KeyCode::Tab => {
+                                    app.input_mode = InputMode::Normal;
+                                    app.output_selected_index = None;
+                                }
+                                KeyCode::Esc => {
+                                    app.input_mode = InputMode::Normal;
+                                    app.output_selected_index = None;
+                                }
+                                _ => {}
+                            }
+                        }
                     }
                 }
             }
         }
-
         // Render UI
         terminal.draw(|f| ui(f, app))?;
 
@@ -573,20 +638,29 @@ fn ui(f: &mut Frame, app: &App) {
 
     // Right panel - Output and input
     let right_chunks = if app.input_mode == InputMode::Input {
-    Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
-        .split(chunks[1])
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
+            .split(chunks[1])
     } else {
-        vec![chunks[1]].into() // Corrige o tipo retornado
+        vec![chunks[1]].into()
     };
 
     // Output area
     let output_chunk = right_chunks[0];
-    let output = Paragraph::new(app.output_lines.join("\n"))
-        .block(Block::default().borders(Borders::ALL).title("📤 Output"))
-        .wrap(Wrap { trim: true })
-        .scroll((app.output_lines.len().saturating_sub(1) as u16, 0));
+    let output_lines: Vec<Line> = app.output_lines.iter().enumerate().map(|(i, line)| {
+    if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(i) {
+        Line::from(vec![Span::styled(line, Style::default().bg(Color::LightYellow).fg(Color::Black))])
+    } else {
+        Line::from(vec![Span::raw(line)])
+    }
+}).collect();
+
+let output = Paragraph::new(output_lines)
+    .block(Block::default().borders(Borders::ALL).title("📤 Output"))
+    .wrap(Wrap { trim: true })
+    .scroll((app.output_lines.len().saturating_sub(1) as u16, 0));
+
     f.render_widget(output, output_chunk);
 
     // Input area (only visible in input mode)
@@ -609,14 +683,16 @@ fn ui(f: &mut Frame, app: &App) {
         let description = &app.command_items[app.selected_index].description;
         let status_text = if app.input_mode == InputMode::Input {
             "INPUT MODE - Enter to confirm, Esc to cancel"
+        } else if app.input_mode == InputMode::OutputSelect {
+            "OUTPUT SELECT - ↑/↓: Navegar, y: Copiar linha, Tab/Esc: Voltar"
         } else {
-            &format!("{} | ↑/↓: Navigate, Enter: Select, q: Quit", description)
+            &format!("{} | ↑/↓: Navegar, Enter: Selecionar, Tab: Output, q: Sair", description)
         };
         
         let status_chunk = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(0), Constraint::Length(1)].as_ref())
-            .split(f.size())[1];
+            .split(f.area())[1];
             
         let status = Paragraph::new(status_text)
             .style(Style::default().fg(Color::Gray))
