@@ -16,6 +16,7 @@ use ratatui::{
 };
 use clap::{Parser, Subcommand};
 use crate::api::Generator;
+use serde_json::Value;
 
 #[derive(Parser)]
 #[command(version, about, disable_help_subcommand = true)]
@@ -114,7 +115,8 @@ struct App {
     input_buffer: String,
     awaiting_input: Option<InputType>,
     regtest_manager: RegtestManager,
-    output_selected_index: Option<usize>, // Para seleção de linha do output
+    output_selected_index: Option<usize>, 
+    expanded_output_lines: Vec<String>,  
 }
 
 #[derive(Clone)]
@@ -236,6 +238,7 @@ impl App {
             awaiting_input: None,
             regtest_manager,
             output_selected_index: None,
+            expanded_output_lines: Vec::new(),
         }
     }
 
@@ -481,6 +484,12 @@ impl App {
         self.output_lines.push("".to_string());
         self.output_lines.push("Navigation: ↑/↓ arrows, Enter to select, Tab: Output select, y: Copy output, q: Quit".to_string());
     }
+
+    fn update_expanded_output(&mut self) {
+        self.expanded_output_lines = self.output_lines.iter()
+            .flat_map(|line| json_to_lines(line))
+            .collect();
+    }
 }
 
 pub fn handle() -> io::Result<()> {
@@ -577,12 +586,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     }
                                 }
                                 KeyCode::Char('y') => {
-                                    if let Some(idx) = app.output_selected_index {
-                                        if let Some(line) = app.output_lines.get(idx) {
-                                            let _ = clipboard.set_contents(line.clone());
-                                            app.output_lines.push(format!("📋 Linha copiada para o clipboard!"));
-                                        }
+                                if let Some(idx) = app.output_selected_index {
+                                    if let Some(line) = app.expanded_output_lines.get(idx) {
+                                        let _ = clipboard.set_contents(line.clone());
+                                        app.output_lines.push(format!("📋 Linha copiada para o clipboard!"));
+                                        app.update_expanded_output();
                                     }
+                                }
                                 }
                                 KeyCode::Tab => {
                                     app.input_mode = InputMode::Normal;
@@ -648,13 +658,26 @@ fn ui(f: &mut Frame, app: &App) {
 
     // Output area
     let output_chunk = right_chunks[0];
-    let output_lines: Vec<Line> = app.output_lines.iter().enumerate().map(|(i, line)| {
-    if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(i) {
-        Line::from(vec![Span::styled(line, Style::default().bg(Color::LightYellow).fg(Color::Black))])
-    } else {
-        Line::from(vec![Span::raw(line)])
-    }
-}).collect();
+    let mut output_lines: Vec<Line> = Vec::new();
+    for (i, line) in app.output_lines.iter().enumerate() {
+        // Se a linha for JSON, quebra em linhas navegáveis
+        if let Ok(_) = serde_json::from_str::<serde_json::Value>(line) {
+            for (j, json_line) in json_to_lines(line).into_iter().enumerate() {
+                let idx = i + j;
+                if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(idx) {
+                    output_lines.push(Line::from(vec![Span::styled(json_line, Style::default().bg(Color::LightYellow).fg(Color::Black))]));
+                } else {
+                    output_lines.push(Line::from(vec![Span::raw(json_line)]));
+                }
+            }
+        } else {
+            if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(i) {
+                output_lines.push(Line::from(vec![Span::styled(line, Style::default().bg(Color::LightYellow).fg(Color::Black))]));
+            } else {
+                output_lines.push(Line::from(vec![Span::raw(line)]));
+            }
+        }
+}
 
 let output = Paragraph::new(output_lines)
     .block(Block::default().borders(Borders::ALL).title("📤 Output"))
@@ -698,5 +721,38 @@ let output = Paragraph::new(output_lines)
             .style(Style::default().fg(Color::Gray))
             .alignment(Alignment::Center);
         f.render_widget(status, status_chunk);
+    }
+}
+fn json_to_lines(json_str: &str) -> Vec<String> {
+    let mut lines = Vec::new();
+    if let Ok(json) = serde_json::from_str::<Value>(json_str) {
+        render_json_value(&json, 0, &mut lines);
+    } else {
+        // Se não for JSON, retorna como uma linha só
+        lines.push(json_str.to_string());
+    }
+    lines
+}
+
+fn render_json_value(value: &Value, indent: usize, lines: &mut Vec<String>) {
+    match value {
+        Value::Object(map) => {
+            for (k, v) in map {
+                if v.is_object() || v.is_array() {
+                    lines.push(format!("{}{}:", "  ".repeat(indent), k));
+                    render_json_value(v, indent + 1, lines);
+                } else {
+                    lines.push(format!("{}{}: {}", "  ".repeat(indent), k, v));
+                }
+            }
+        }
+        Value::Array(arr) => {
+            for v in arr {
+                render_json_value(v, indent, lines);
+            }
+        }
+        _ => {
+            lines.push(format!("{}{}", "  ".repeat(indent), value));
+        }
     }
 }

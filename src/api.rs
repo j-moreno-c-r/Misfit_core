@@ -45,14 +45,14 @@ impl Generator {
             txs: Some(txs),
         });
 
-        [
-            format!("{:#?} ", block.header),
-            format!("Block Header encoded: {:#?}", encode::serialize_hex(&block.header)),
-            format!("Raw txs: {:#?}", raw_tx),
-            format!("TxID: {:#?}", tx_ids),
-        ]
-        .join("\n---\n")
-    }
+        serde_json::json!({
+        "header": format!("{:?}", block.header),
+        "header_hex": encode::serialize_hex(&block.header),
+        "raw_transactions": raw_tx,
+        "txids": tx_ids
+    })
+    .to_string()
+}
 
     pub fn transaction(count: u32) -> String {
         let mut raw_tx: Vec<String> = vec![];
@@ -78,11 +78,11 @@ impl Generator {
         txid.push(tx_id);
     }
 
-        [
-            format!("Raw Transactions: {:#?}", raw_tx),
-            format!("TXIDs: {:#?}", txid),
-        ]
-        .join("\n---\n")
+        serde_json::json!({
+        "raw_transactions": raw_tx,
+        "txids": txid
+    })
+    .to_string()
     }
 
     pub fn decode_raw_transaction(
