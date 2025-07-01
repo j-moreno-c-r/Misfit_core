@@ -695,12 +695,12 @@ fn ui(f: &mut Frame, app: &App) {
         f.render_widget(status, status_chunk);
     }
 }
+
 fn json_to_lines(json_str: &str) -> Vec<String> {
     let mut lines = Vec::new();
     if let Ok(json) = serde_json::from_str::<Value>(json_str) {
         render_json_value(&json, 0, &mut lines);
     } else {
-        // Se não for JSON, retorna como uma linha só
         lines.push(json_str.to_string());
     }
     lines
@@ -714,7 +714,7 @@ fn render_json_value(value: &Value, indent: usize, lines: &mut Vec<String>) {
                     lines.push(format!("{}{}:", "  ".repeat(indent), k));
                     render_json_value(v, indent + 1, lines);
                 } else {
-                    lines.push(format!("{}{}: {}", "  ".repeat(indent), k, v));
+                    lines.push(format!("{}{}: {}", "  ".repeat(indent), k, value_to_string_no_quotes(v)));
                 }
             }
         }
@@ -724,7 +724,14 @@ fn render_json_value(value: &Value, indent: usize, lines: &mut Vec<String>) {
             }
         }
         _ => {
-            lines.push(format!("{}{}", "  ".repeat(indent), value));
+            lines.push(format!("{}{}", "  ".repeat(indent), value_to_string_no_quotes(value)));
         }
+    }
+}
+
+fn value_to_string_no_quotes(value: &Value) -> String {
+    match value {
+        Value::String(s) => s.clone(),
+        _ => format!("{}", value),
     }
 }

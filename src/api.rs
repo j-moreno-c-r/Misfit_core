@@ -16,6 +16,7 @@ pub struct Generator {}
 impl Generator {
     pub fn block(tx_count: u32) -> String {
         let mut txs: Vec<Transaction> = vec![];
+        let mut encoded_header: Vec<String> = vec![];
         let mut raw_tx: Vec<String> = vec![];
         let mut tx_ids: Vec<String> = vec![];
 
@@ -40,14 +41,14 @@ impl Generator {
         tx_ids.push(txid);
 }
 
-        let block = GenerateBlock::valid_random(BlockParams {
+        let block: bitcoin::Block = GenerateBlock::valid_random(BlockParams {
             header: None,
             txs: Some(txs),
         });
-
+        encoded_header.push(hex::encode(encode::serialize(&block.header)));
         serde_json::json!({
         "header": format!("{:?}", block.header),
-        "header_hex": encode::serialize_hex(&block.header),
+        "header_hex": encoded_header,
         "raw_transactions": raw_tx,
         "txids": tx_ids
     })
