@@ -105,7 +105,6 @@ pub enum Commands {
     },
 }
 
-// App state structure
 struct App {
     command_items: Vec<CommandItem>,
     selected_index: usize,
@@ -116,7 +115,7 @@ struct App {
     awaiting_input: Option<InputType>,
     regtest_manager: RegtestManager,
     output_selected_index: Option<usize>, 
-    expanded_output_lines: Vec<String>,  
+    _expanded_output_lines: Vec<String>,  
 }
 
 #[derive(Clone)]
@@ -238,7 +237,7 @@ impl App {
             awaiting_input: None,
             regtest_manager,
             output_selected_index: None,
-            expanded_output_lines: Vec::new(),
+            _expanded_output_lines: Vec::new(),
         }
     }
 
@@ -484,12 +483,6 @@ impl App {
         self.output_lines.push("".to_string());
         self.output_lines.push("Navigation: ↑/↓ arrows, Enter to select, Tab: Output select, y: Copy output, q: Quit".to_string());
     }
-
-    fn update_expanded_output(&mut self) {
-        self.expanded_output_lines = self.output_lines.iter()
-            .flat_map(|line| json_to_lines(line))
-            .collect();
-    }
 }
 
 pub fn handle() -> io::Result<()> {
@@ -519,7 +512,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     let mut clipboard = ClipboardContext::new().unwrap();
 
     loop {
-        // Handle input events
+        // Gere as linhas expandidas para navegação/cópia
+        let expanded_lines: Vec<String> = app.output_lines.iter()
+            .flat_map(|line| json_to_lines(line))
+            .collect();
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
@@ -580,25 +576,20 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                                 KeyCode::Down => {
                                     if let Some(idx) = app.output_selected_index {
-                                        if idx < app.output_lines.len().saturating_sub(1) {
+                                        if idx + 1 < expanded_lines.len() {
                                             app.output_selected_index = Some(idx + 1);
                                         }
                                     }
                                 }
                                 KeyCode::Char('y') => {
-                                if let Some(idx) = app.output_selected_index {
-                                    if let Some(line) = app.expanded_output_lines.get(idx) {
-                                        let _ = clipboard.set_contents(line.clone());
-                                        app.output_lines.push(format!("📋 Linha copiada para o clipboard!"));
-                                        app.update_expanded_output();
+                                    if let Some(idx) = app.output_selected_index {
+                                        if let Some(line) = expanded_lines.get(idx) {
+                                            let _ = clipboard.set_contents(line.clone());
+                                            app.output_lines.push(format!("📋 Linha copiada para o clipboard!"));
+                                        }
                                     }
                                 }
-                                }
-                                KeyCode::Tab => {
-                                    app.input_mode = InputMode::Normal;
-                                    app.output_selected_index = None;
-                                }
-                                KeyCode::Esc => {
+                                KeyCode::Tab | KeyCode::Esc => {
                                     app.input_mode = InputMode::Normal;
                                     app.output_selected_index = None;
                                 }
@@ -609,10 +600,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 }
             }
         }
-        // Render UI
         terminal.draw(|f| ui(f, app))?;
 
-        // Check exit condition
         if app.should_quit {
             return Ok(());
         }
@@ -620,13 +609,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    // Split window into two vertical areas
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(30), Constraint::Min(0)].as_ref())
-        .split(f.size());
+        .split(f.area());
 
-    // Left panel - Commands
     let items: Vec<ListItem> = app
         .command_items
         .iter()
@@ -646,7 +633,6 @@ fn ui(f: &mut Frame, app: &App) {
         .highlight_style(Style::default().fg(Color::Black).bg(Color::LightBlue));
     f.render_widget(list, chunks[0]);
 
-    // Right panel - Output and input
     let right_chunks = if app.input_mode == InputMode::Input {
         Layout::default()
             .direction(Direction::Vertical)
@@ -656,33 +642,25 @@ fn ui(f: &mut Frame, app: &App) {
         vec![chunks[1]].into()
     };
 
-    // Output area
-    let output_chunk = right_chunks[0];
-    let mut output_lines: Vec<Line> = Vec::new();
-    for (i, line) in app.output_lines.iter().enumerate() {
-        // Se a linha for JSON, quebra em linhas navegáveis
-        if let Ok(_) = serde_json::from_str::<serde_json::Value>(line) {
-            for (j, json_line) in json_to_lines(line).into_iter().enumerate() {
-                let idx = i + j;
-                if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(idx) {
-                    output_lines.push(Line::from(vec![Span::styled(json_line, Style::default().bg(Color::LightYellow).fg(Color::Black))]));
-                } else {
-                    output_lines.push(Line::from(vec![Span::raw(json_line)]));
-                }
-            }
-        } else {
-            if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(i) {
-                output_lines.push(Line::from(vec![Span::styled(line, Style::default().bg(Color::LightYellow).fg(Color::Black))]));
-            } else {
-                output_lines.push(Line::from(vec![Span::raw(line)]));
-            }
-        }
-}
+    // Gere todas as linhas expandidas do output
+    let expanded_lines: Vec<String> = app.output_lines.iter()
+        .flat_map(|line| json_to_lines(line))
+        .collect();
 
-let output = Paragraph::new(output_lines)
-    .block(Block::default().borders(Borders::ALL).title("📤 Output"))
-    .wrap(Wrap { trim: true })
-    .scroll((app.output_lines.len().saturating_sub(1) as u16, 0));
+    // Renderize as linhas expandidas
+    let output_chunk = right_chunks[0];
+    let output_lines: Vec<Line> = expanded_lines.iter().enumerate().map(|(idx, line)| {
+        if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(idx) {
+            Line::from(vec![Span::styled(line, Style::default().bg(Color::LightYellow).fg(Color::Black))])
+        } else {
+            Line::from(vec![Span::raw(line)])
+        }
+    }).collect();
+
+    let output = Paragraph::new(output_lines)
+        .block(Block::default().borders(Borders::ALL).title("📤 Output"))
+        .wrap(Wrap { trim: true })
+        .scroll((app.output_selected_index.unwrap_or(0) as u16, 0));
 
     f.render_widget(output, output_chunk);
 
@@ -693,12 +671,6 @@ let output = Paragraph::new(output_lines)
             .block(Block::default().borders(Borders::ALL).title("📝 Input"))
             .style(Style::default().fg(Color::Yellow));
         f.render_widget(input, input_chunk);
-        
-        // Set cursor position
-        f.set_cursor(
-            input_chunk.x + app.input_buffer.len() as u16 + 1,
-            input_chunk.y + 1,
-        );
     }
 
     // Show command description in the bottom
