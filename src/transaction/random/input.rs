@@ -4,7 +4,7 @@ use bitcoin::{
 };
 use secp256k1::rand::{self, Rng};
 
-use crate::transaction::random::{witness::{RandomWitness, WitnessParams}, taproot::{RandomTaprootWitness, TaprootWitnessParams}};
+use crate::transaction::random::{witness::{RandomWitness, WitnessParams, RandomTaprootWitness, TaprootWitnessParams},};
 
 use super::{
     script::{RandomScript, ScriptParams, ScriptTypes},
