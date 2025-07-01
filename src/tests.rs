@@ -171,7 +171,6 @@ mod tests {
         
     }
 
-
     
     #[test]
     fn test_decode_raw_transaction_with_valid_data() {
@@ -180,7 +179,6 @@ mod tests {
         let result = Generator::decode_raw_transaction(valid_raw_tx);
         assert!(result.is_ok());
     }
-
 
     #[test]
     fn test_decoder_block_header_with_valid_data() {
@@ -201,7 +199,6 @@ mod tests {
         
         assert!(result != tx_result);
     }
-
 
     #[test]
     fn test_break_transaction_with_no_flags() {
@@ -357,4 +354,21 @@ mod tests {
         }
 }
 }
+    #[test]
+    fn test_merkle_root_calculation() {
+        use misfit_core::block::random::merkle_root::MerkleRoot;
+        use bitcoin::{Transaction, consensus, TxMerkleNode};
+        use hex::decode;
+
+        let raw_tx_hex = "02000000000101eab2b1177d16f4455aa59b9037579c2059e41de6611e07f10d2a4a1eca2105614000000000ffffffff024a01000000000000160014b2e0c1fae026b598701fc98f9f6e8ed8c214d01b0000000000000000076a5d0414011400034020ccac8f7217d1b0f9bd9a406e79e52e225c4ec46367dfb4023921b3e33e60325c6cad1a66c3f3c84818af82369c5357e6f738f8ed73ba276a70753e7b348ecd7820e932346f31b0316272fa817410312014623cd726e876a2ff0264661a5cbab202ac0063036f7264010118746578742f706c61696e3b636861727365743d7574662d3800327b2270223a226272632d3230222c226f70223a226d696e74222c227469636b223a2262686169222c22616d74223a2231227d6821c0e932346f31b0316272fa817410312014623cd726e876a2ff0264661a5cbab20200000000";
+        let raw_tx_bytes = decode(raw_tx_hex).expect("hex decode failed");
+        let tx: Transaction = consensus::deserialize(&raw_tx_bytes).expect("tx decode failed");
+        let txs = vec![tx];
+        let root = <bitcoin::TxMerkleNode as MerkleRoot>::from_transactions(txs);
+        let mut expected = decode("4dc9a854600f6ed1e6b1ee9b9c94714287a6477372d58ae78bf1f3df9cb44f2f").unwrap();
+        expected.reverse(); 
+        assert_eq!(<TxMerkleNode as AsRef<[u8]>>::as_ref(&root), expected.as_slice());
+    }
+    
+
 }
