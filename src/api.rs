@@ -370,7 +370,7 @@ impl Generator {
             fields_to_modify: fields,
             version_override: None,
             timestamp_offset: None,
-            randomize_hashes: true, // default to random hashes
+            randomize_hashes: true, 
         };
 
         for config_option in cli_config {

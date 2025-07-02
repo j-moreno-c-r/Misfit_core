@@ -586,7 +586,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     if let Some(idx) = app.output_selected_index {
                                         if let Some(line) = expanded_lines.get(idx) {
                                             let _ = clipboard.set_contents(line.clone());
-                                            app.output_lines.push(format!("📋 Linha copiada para o clipboard!"));
+                                            app.output_lines.push("📋 Linha copiada para o clipboard!".to_string());
                                         }
                                     }
                                 }
@@ -712,7 +712,7 @@ fn render_json_value(value: &Value, indent: usize, lines: &mut Vec<String>) {
         Value::Object(map) => {
             for (k, v) in map {
                 if v.is_object() || v.is_array() {
-                    lines.push(format!("{}{}:", "  ".repeat(indent), k));
+                    lines.push(format!("{}{}: ",  "  ".repeat(indent), k));
                     render_json_value(v, indent + 1, lines);
                 } else {
                     lines.push(format!("{}{}: {}", "  ".repeat(indent), k, value_to_string_no_quotes(v)));

@@ -5,7 +5,7 @@ use bitcoin::{
     sighash::{EcdsaSighashType, SighashCache},
     NetworkKind, OutPoint, PrivateKey, PublicKey, ScriptBuf, SegwitV0Sighash, Transaction, Txid,
     Witness,
-    key::{Keypair, TapTweak},//TweakedKeypair
+    key::{Keypair, TapTweak},//
     Amount,
     sighash::{Prevouts, TapSighashType},
     TxOut, 
@@ -47,7 +47,10 @@ impl RandomWitness for Witness {
     fn random(params: WitnessParams) -> Witness {
         let transaction = params.transaction.unwrap_or_else(|| {
             let mut random_tx_params = TxParams::default();
-            let mut random_input_params = InputParams::default();
+            let mut random_input_params = InputParams { witness: Some(Witness::default()), outpoint: Some(OutPoint {
+                      txid: Txid::all_zeros(),
+                      vout: rand::thread_rng().gen::<u32>(),
+                  }), ..Default::default() };
 
             random_input_params.witness = Some(Witness::default());
             random_input_params.outpoint = Some(OutPoint {
