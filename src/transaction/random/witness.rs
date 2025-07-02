@@ -19,7 +19,6 @@ use crate::transaction::random::{
 };
 
 
-
 #[derive(Default, Debug, Clone)]
 pub struct TaprootWitnessParams {
     pub transaction: Option<Transaction>,

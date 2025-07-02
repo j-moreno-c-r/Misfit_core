@@ -30,11 +30,10 @@ Or run with the cargo
 ```b
 cargo run
 ```
-For now the flags are not working are just here to develop anotation 
 
 ### Basic usage
 
-Type Help on the cli to see the actual avaliable commands
-```b
-> help
-```
+* Press h to see funcionalities of the commands, 
+* press Tab to go to output, 
+* use arrows to navigate in the ouput/input  
+* Press y to copy the ouput to the clipboard 

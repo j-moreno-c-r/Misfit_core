@@ -2,6 +2,19 @@
 #[cfg(test)]
 mod tests {
     pub use crate::api::{Generator};
+    pub use misfit_core::{transaction::random::witness::{RandomWitness, WitnessParams, TaprootWitnessParams, RandomTaprootWitness}};
+    use bitcoin::{
+    hashes::Hash,
+    secp256k1::{Message, Secp256k1},
+    sighash::{EcdsaSighashType, SighashCache},
+    NetworkKind, OutPoint, PrivateKey, PublicKey, ScriptBuf,Transaction, Txid,
+    Witness,
+    key::{Keypair},//TweakedKeypair
+    Amount,
+    sighash::{TapSighashType},
+    TxOut, 
+};
+
 
     #[test]
     fn test_generate_single_transaction() {
@@ -369,6 +382,347 @@ mod tests {
         expected.reverse(); 
         assert_eq!(<TxMerkleNode as AsRef<[u8]>>::as_ref(&root), expected.as_slice());
     }
+     #[test]
+    fn test_random_witness_with_default_params() {
+        let params = WitnessParams::default();
+        let witness = <Witness as RandomWitness>::random(params);
+        
+        // Should generate a witness (may be empty for certain script types)
+        assert!(witness.len() <= 2); // P2WPKH has 2 elements, P2WSH can vary
+    }
+
+    #[test]
+    fn test_random_witness_p2wpkh() {
+        // Create a simple transaction for testing
+        let tx = Transaction {
+            version: bitcoin::transaction::Version::TWO,
+            lock_time: bitcoin::absolute::LockTime::ZERO,
+            input: vec![bitcoin::TxIn {
+                previous_output: OutPoint {
+                    txid: Txid::all_zeros(),
+                    vout: 0,
+                },
+                script_sig: ScriptBuf::new(),
+                sequence: bitcoin::Sequence::ENABLE_RBF_NO_LOCKTIME,
+                witness: Witness::default(),
+            }],
+            output: vec![TxOut {
+                value: Amount::from_sat(50000),
+                script_pubkey: ScriptBuf::new(),
+            }],
+        };
+
+        let private_key = PrivateKey::generate(NetworkKind::Main);
+        let pub_key = PublicKey::from_private_key(&Secp256k1::new(), &private_key);
+        let script = ScriptBuf::new_p2wpkh(&pub_key.wpubkey_hash().unwrap());
+
+        let params = WitnessParams {
+            transaction: Some(tx),
+            vout: Some(0),
+            script: Some((script, misfit_core::transaction::random::script::ScriptTypes::P2WPKH)),
+            private_key: Some(private_key),
+        };
+
+        let witness = <Witness as RandomWitness>::random(params);
+        
+        // P2WPKH witness should have exactly 2 elements: signature and pubkey
+        assert_eq!(witness.len(), 2);
+        
+        // First element should be signature (65-73 bytes typically)
+        let sig_bytes = witness.nth(0).unwrap();
+        assert!(sig_bytes.len() >= 64 && sig_bytes.len() <= 73);
+        
+        // Second element should be public key (33 bytes for compressed)
+        let pubkey_bytes = witness.nth(1).unwrap();
+        assert_eq!(pubkey_bytes.len(), 33);
+    }
+
+    #[test]
+    fn test_random_witness_p2wsh() {
+        let tx = Transaction {
+            version: bitcoin::transaction::Version::TWO,
+            lock_time: bitcoin::absolute::LockTime::ZERO,
+            input: vec![bitcoin::TxIn {
+                previous_output: OutPoint {
+                    txid: Txid::all_zeros(),
+                    vout: 0,
+                },
+                script_sig: ScriptBuf::new(),
+                sequence: bitcoin::Sequence::ENABLE_RBF_NO_LOCKTIME,
+                witness: Witness::default(),
+            }],
+            output: vec![TxOut {
+                value: Amount::from_sat(100000),
+                script_pubkey: ScriptBuf::new(),
+            }],
+        };
+
+        let private_key = PrivateKey::generate(NetworkKind::Main);
+        // Create a simple P2WSH script (like a multisig or custom script)
+        let witness_script = ScriptBuf::new_p2pk(&PublicKey::from_private_key(&Secp256k1::new(), &private_key));
+
+        let params = WitnessParams {
+            transaction: Some(tx),
+            vout: Some(0),
+            script: Some((witness_script, misfit_core::transaction::random::script::ScriptTypes::P2WSH)),
+            private_key: Some(private_key),
+        };
+
+        let witness = <Witness as RandomWitness>::random(params);
+        
+        // P2WSH witness should have at least 2 elements: signature(s) and witness script
+        assert!(witness.len() >= 2);
+        
+        // Last element should be the witness script
+        let script_bytes = witness.nth(witness.len() - 1).unwrap();
+        assert!(!script_bytes.is_empty());
+    }
+
+    #[test]
+    fn test_random_witness_signature_verification() {
+        let secp = Secp256k1::new();
+        let private_key = PrivateKey::generate(NetworkKind::Main);
+        let pub_key = PublicKey::from_private_key(&secp, &private_key);
+        
+        let tx = Transaction {
+            version: bitcoin::transaction::Version::TWO,
+            lock_time: bitcoin::absolute::LockTime::ZERO,
+            input: vec![bitcoin::TxIn {
+                previous_output: OutPoint {
+                    txid: Txid::all_zeros(),
+                    vout: 0,
+                },
+                script_sig: ScriptBuf::new(),
+                sequence: bitcoin::Sequence::ENABLE_RBF_NO_LOCKTIME,
+                witness: Witness::default(),
+            }],
+            output: vec![TxOut {
+                value: Amount::from_sat(50000),
+                script_pubkey: ScriptBuf::new(),
+            }],
+        };
+
+        let script = ScriptBuf::new_p2wpkh(&pub_key.wpubkey_hash().unwrap());
+
+        let params = WitnessParams {
+            transaction: Some(tx.clone()),
+            vout: Some(0),
+            script: Some((script.clone(), misfit_core::transaction::random::script::ScriptTypes::P2WPKH)),
+            private_key: Some(private_key),
+        };
+
+        let witness = <Witness as RandomWitness>::random(params);
+
+        let sig_bytes = witness.nth(0).unwrap();
+        let _pubkey_bytes = witness.nth(1).unwrap();
+        
+        // Parse signature (remove sighash type byte)
+        let sig_der = &sig_bytes[..sig_bytes.len()-1];
+        let ecdsa_sig = bitcoin::secp256k1::ecdsa::Signature::from_der(sig_der).unwrap();
+        
+        // Recreate sighash to verify
+        let sighash = SighashCache::new(&tx)
+            .p2wpkh_signature_hash(0, &script, Amount::from_sat(50000), EcdsaSighashType::All)
+            .unwrap();
+        
+        let msg = Message::from_digest_slice(&sighash[..]).unwrap();
+        
+        // Verify signature
+        assert!(secp.verify_ecdsa(&msg, &ecdsa_sig, &pub_key.inner).is_ok());
+    }
+
+
+    #[test]
+    fn test_random_taproot_witness_with_default_params() {
+        let params = TaprootWitnessParams::default();
+        let witness = <Witness as RandomTaprootWitness>::random(params);
+        
+        // Taproot key spend witness should have exactly 1 element (the signature)
+        assert_eq!(witness.len(), 1);
+        
+        // Signature should be 64 or 65 bytes (Schnorr signature)
+        let sig_bytes = witness.nth(0).unwrap();
+        assert!(sig_bytes.len() == 64 || sig_bytes.len() == 65);
+    }
+
+    #[test]
+    fn test_random_taproot_witness_with_custom_keypair() {
+        let secp = Secp256k1::new();
+        let mut rng = bitcoin::secp256k1::rand::thread_rng();
+        let sk = bitcoin::secp256k1::SecretKey::new(&mut rng);
+        let keypair = Keypair::from_secret_key(&secp, &sk);
     
+        let params = TaprootWitnessParams {
+            keypair: Some(keypair),
+            ..Default::default()
+        };
+    
+        let witness = <Witness as RandomTaprootWitness>::random(params);
+    
+        assert_eq!(witness.len(), 1);
+        let sig_bytes = witness.nth(0).unwrap();
+        assert!(sig_bytes.len() == 64 || sig_bytes.len() == 65);
+    }
+    #[test]
+    fn test_random_taproot_witness_with_custom_transaction() {
+        let custom_tx = Transaction {
+            version: bitcoin::transaction::Version::TWO,
+            lock_time: bitcoin::absolute::LockTime::ZERO,
+            input: vec![bitcoin::TxIn {
+                previous_output: OutPoint {
+                    txid: Txid::all_zeros(),
+                    vout: 5,
+                },
+                script_sig: ScriptBuf::new(),
+                sequence: bitcoin::Sequence::MAX,
+                witness: Witness::default(),
+            }],
+            output: vec![TxOut {
+                value: Amount::from_sat(200000),
+                script_pubkey: ScriptBuf::new(),
+            }],
+        };
+
+        let params = TaprootWitnessParams {
+            transaction: Some(custom_tx),
+            vout: Some(0),
+            ..Default::default()
+        };
+
+        let witness = <Witness as RandomTaprootWitness>::random(params);
+        
+        assert_eq!(witness.len(), 1);
+    }
+
+    #[test]
+    fn test_random_taproot_witness_with_custom_utxo() {
+        let custom_utxo = TxOut {
+            value: Amount::from_sat(500000),
+            script_pubkey: ScriptBuf::new_p2tr_tweaked(
+                bitcoin::key::TweakedPublicKey::dangerous_assume_tweaked(
+                    bitcoin::secp256k1::XOnlyPublicKey::from_slice(&[2u8; 32]).unwrap()
+                )
+            ),
+        };
+
+        let params = TaprootWitnessParams {
+            utxo: Some(custom_utxo),
+            ..Default::default()
+        };
+
+        let witness = <Witness as RandomTaprootWitness>::random(params);
+        
+        assert_eq!(witness.len(), 1);
+    }
+
+    #[test]
+    fn test_taproot_witness_signature_format() {
+        let params = TaprootWitnessParams::default();
+        let witness = <Witness as RandomTaprootWitness>::random(params);
+        
+        let sig_bytes = witness.nth(0).unwrap();
+        
+        // Taproot signatures are Schnorr signatures
+        if sig_bytes.len() == 65 {
+            // If 65 bytes, last byte should be sighash type
+            let sighash_type = sig_bytes[64];
+            assert_eq!(sighash_type, TapSighashType::Default as u8);
+        } else if sig_bytes.len() == 64 {
+            // 64 bytes means default sighash type (0x00) is implied
+            assert_eq!(sig_bytes.len(), 64);
+        } else {
+            panic!("Invalid Taproot signature length: {}", sig_bytes.len());
+        }
+    }
+
+    #[test] 
+    fn test_witness_empty_for_unsupported_script_types() {
+        // Test that unsupported script types return empty witness
+        let tx = Transaction {
+            version: bitcoin::transaction::Version::TWO,
+            lock_time: bitcoin::absolute::LockTime::ZERO,
+            input: vec![bitcoin::TxIn::default()],
+            output: vec![TxOut {
+                value: Amount::from_sat(50000),
+                script_pubkey: ScriptBuf::new(),
+            }],
+        };
+
+        // Test with a script type that should return empty witness
+        let params = WitnessParams {
+            transaction: Some(tx),
+            vout: Some(0),
+            script: Some((ScriptBuf::new(), misfit_core::transaction::random::script::ScriptTypes::P2PK)), // Legacy type
+            private_key: None,
+        };
+
+        let witness = <Witness as RandomWitness>::random(params);
+        assert!(witness.is_empty());
+    }
+
+    #[test]
+    fn test_witness_generation_performance() {
+        use std::time::Instant;
+        
+        let start = Instant::now();
+        
+        // Generate 100 witnesses to test performance
+        for _ in 0..100 {
+            let params = WitnessParams::default();
+            let _ = <Witness as RandomWitness>::random(params);
+        }
+        
+        let duration = start.elapsed();
+        println!("Generated 100 witnesses in: {:?}", duration);
+        
+        // Should complete reasonably quickly (adjust threshold as needed)
+        assert!(duration.as_secs() < 5);
+    }
+
+    #[test]
+    fn test_taproot_witness_generation_performance() {
+        use std::time::Instant;
+        
+        let start = Instant::now();
+        
+        // Generate 100 Taproot witnesses to test performance
+        for _ in 0..100 {
+            let params = TaprootWitnessParams::default();
+            let _ = <Witness as RandomTaprootWitness>::random(params);
+        }
+        
+        let duration = start.elapsed();
+        println!("Generated 100 Taproot witnesses in: {:?}", duration);
+        
+        // Should complete reasonably quickly
+        assert!(duration.as_secs() < 5);
+    }
+
+    #[test]
+    fn test_witness_serialization_roundtrip() {
+        let params = WitnessParams::default();
+        let witness = <Witness as RandomWitness>::random(params);
+        
+        // Test that witness can be serialized and deserialized
+        let serialized = bitcoin::consensus::serialize(&witness);
+        let deserialized: Witness = bitcoin::consensus::deserialize(&serialized).unwrap();
+        
+        assert_eq!(witness.len(), deserialized.len());
+        for i in 0..witness.len() {
+            assert_eq!(witness.nth(i), deserialized.nth(i));
+        }
+    }
+
+    #[test]
+    fn test_taproot_witness_serialization_roundtrip() {
+        let params = TaprootWitnessParams::default();
+        let witness = <Witness as RandomTaprootWitness>::random(params);
+        
+        let serialized = bitcoin::consensus::serialize(&witness);
+        let deserialized: Witness = bitcoin::consensus::deserialize(&serialized).unwrap();
+        
+        assert_eq!(witness.len(), deserialized.len());
+        assert_eq!(witness.nth(0), deserialized.nth(0));
+    }
 
 }

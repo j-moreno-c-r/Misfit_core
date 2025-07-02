@@ -507,6 +507,7 @@ pub fn handle() -> io::Result<()> {
     
     result
 }
+
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     use copypasta::{ClipboardContext, ClipboardProvider};
     let mut clipboard = ClipboardContext::new().unwrap();
