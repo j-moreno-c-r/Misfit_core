@@ -84,7 +84,7 @@ impl HeaderProcessor {
     ) -> Header {
         use super::block::BlockField;
         
-        let mut modified_header = header.clone();
+        let mut modified_header = *header;
         let should_modify_all = fields_to_modify.contains(&BlockField::All);
 
         if should_modify_all || fields_to_modify.contains(&BlockField::Version) {
