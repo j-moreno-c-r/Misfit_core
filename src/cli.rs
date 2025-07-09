@@ -115,7 +115,13 @@ struct App {
     awaiting_input: Option<InputType>,
     regtest_manager: RegtestManager,
     output_selected_index: Option<usize>, 
-    _expanded_output_lines: Vec<String>,  
+    _expanded_output_lines: Vec<String>,
+    
+    // Subwindow state
+    subwindow_mode: Option<SubwindowMode>,
+    field_items: Vec<FieldItem>,
+    field_selected_index: usize,
+    pending_hex_input: String,
 }
 
 #[derive(Clone)]
@@ -124,6 +130,14 @@ struct CommandItem {
     description: String,
     shortcut: Option<char>,
     command_type: CommandType,
+}
+
+#[derive(Clone)]
+struct FieldItem {
+    name: String,
+    description: String,
+    flag: String,
+    selected: bool,
 }
 
 #[derive(Clone)]
@@ -143,11 +157,18 @@ enum InputType {
     GetBlockByHeight,
 }
 
+#[derive(Clone)]
+enum SubwindowMode {
+    TransactionFields,
+    BlockFields,
+}
+
 #[derive(PartialEq)]
 enum InputMode {
     Normal,
     Input,
     OutputSelect,
+    Subwindow,
 }
 
 impl App {
@@ -238,7 +259,123 @@ impl App {
             regtest_manager,
             output_selected_index: None,
             _expanded_output_lines: Vec::new(),
+            subwindow_mode: None,
+            field_items: Vec::new(),
+            field_selected_index: 0,
+            pending_hex_input: String::new(),
         }
+    }
+
+    fn get_transaction_fields() -> Vec<FieldItem> {
+        vec![
+            FieldItem {
+                name: "Version".to_string(),
+                description: "Transaction version number".to_string(),
+                flag: "--version".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Transaction ID".to_string(),
+                description: "Input transaction ID".to_string(),
+                flag: "--txid".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "VOut".to_string(),
+                description: "Input vout index".to_string(),
+                flag: "--vout".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Script Signature".to_string(),
+                description: "Input script signature".to_string(),
+                flag: "--script-sig".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Sequence".to_string(),
+                description: "Input sequence number".to_string(),
+                flag: "--sequence".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Amount".to_string(),
+                description: "Output amount".to_string(),
+                flag: "--amount".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Script PubKey".to_string(),
+                description: "Output script pubkey".to_string(),
+                flag: "--script-pubkey".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Witness".to_string(),
+                description: "Witness data".to_string(),
+                flag: "--witness".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Locktime".to_string(),
+                description: "Transaction locktime".to_string(),
+                flag: "--locktime".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "All Fields".to_string(),
+                description: "Break all transaction fields".to_string(),
+                flag: "--all".to_string(),
+                selected: false,
+            },
+        ]
+    }
+
+    fn get_block_fields() -> Vec<FieldItem> {
+        vec![
+            FieldItem {
+                name: "Version".to_string(),
+                description: "Block version".to_string(),
+                flag: "--version".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Previous Hash".to_string(),
+                description: "Previous block hash".to_string(),
+                flag: "--prev-hash".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Merkle Root".to_string(),
+                description: "Merkle root hash".to_string(),
+                flag: "--merkle-root".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Timestamp".to_string(),
+                description: "Block timestamp".to_string(),
+                flag: "--timestamp".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Bits".to_string(),
+                description: "Difficulty bits".to_string(),
+                flag: "--bits".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "Nonce".to_string(),
+                description: "Block nonce".to_string(),
+                flag: "--nonce".to_string(),
+                selected: false,
+            },
+            FieldItem {
+                name: "All Fields".to_string(),
+                description: "Break all block fields".to_string(),
+                flag: "--all".to_string(),
+                selected: false,
+            },
+        ]
     }
 
     fn execute_command(&mut self) {
@@ -276,51 +413,137 @@ impl App {
     }
 
     fn start_input_mode(&mut self, input_type: InputType) {
-        self.input_mode = InputMode::Input;
-        self.awaiting_input = Some(input_type.clone());
-        self.input_buffer.clear();
-        
-        let prompt = match input_type {
-            InputType::DecodeTransaction => "Enter raw transaction hex:",
-            InputType::DecodeBlock => "Enter block header hex:",
-            InputType::BreakTransaction => "Enter raw transaction hex (you can add flags like --version --all):",
-            InputType::BreakBlock => "Enter block header hex (you can add flags like --version --all):",
-            InputType::GenerateTx => "Enter number of transactions to generate:",
-            InputType::GenerateBlock => "Enter number of transactions for the block:",
-            InputType::GetBlockByHeight => "Enter block height:",
-        };
-        
-        self.output_lines.push(format!("📝 {}", prompt));
-        self.output_lines.push("Type your input and press Enter, or press Esc to cancel.".to_string());
+        match input_type {
+            InputType::BreakTransaction | InputType::BreakBlock => {
+                self.input_mode = InputMode::Input;
+                self.awaiting_input = Some(input_type.clone());
+                self.input_buffer.clear();
+                
+                let prompt = match input_type {
+                    InputType::BreakTransaction => "Enter raw transaction hex:",
+                    InputType::BreakBlock => "Enter block header hex:",
+                    _ => unreachable!(),
+                };
+                
+                self.output_lines.push(format!("📝 {}", prompt));
+                self.output_lines.push("Enter the hex data, then you'll select fields to break.".to_string());
+            }
+            _ => {
+                self.input_mode = InputMode::Input;
+                self.awaiting_input = Some(input_type.clone());
+                self.input_buffer.clear();
+                
+                let prompt = match input_type {
+                    InputType::DecodeTransaction => "Enter raw transaction hex:",
+                    InputType::DecodeBlock => "Enter block header hex:",
+                    InputType::GenerateTx => "Enter number of transactions to generate:",
+                    InputType::GenerateBlock => "Enter number of transactions for the block:",
+                    InputType::GetBlockByHeight => "Enter block height:",
+                    _ => unreachable!(),
+                };
+                
+                self.output_lines.push(format!("📝 {}", prompt));
+                self.output_lines.push("Type your input and press Enter, or press Esc to cancel.".to_string());
+            }
+        }
     }
 
     fn process_input(&mut self) {
         if let Some(input_type) = self.awaiting_input.take() {
             let input = self.input_buffer.trim().to_string();
             self.input_buffer.clear();
-            self.input_mode = InputMode::Normal;
             
             if input.is_empty() {
+                self.input_mode = InputMode::Normal;
                 self.output_lines.push("❌ Input cancelled or empty".to_string());
                 return;
             }
             
             match input_type {
-                InputType::DecodeTransaction => self.decode_transaction(input),
-                InputType::DecodeBlock => self.decode_block(input),
-                InputType::BreakTransaction => self.break_transaction_interactive(input),
-                InputType::BreakBlock => self.break_block_interactive(input),
-                InputType::GenerateTx => self.generate_tx_interactive(input),
-                InputType::GenerateBlock => self.generate_block_interactive(input),
-                InputType::GetBlockByHeight => self.get_block_by_height_interactive(input),
+                InputType::DecodeTransaction => {
+                    self.input_mode = InputMode::Normal;
+                    self.decode_transaction(input);
+                }
+                InputType::DecodeBlock => {
+                    self.input_mode = InputMode::Normal;
+                    self.decode_block(input);
+                }
+                InputType::BreakTransaction => {
+                    self.pending_hex_input = input;
+                    self.field_items = Self::get_transaction_fields();
+                    self.field_selected_index = 0;
+                    self.subwindow_mode = Some(SubwindowMode::TransactionFields);
+                    self.input_mode = InputMode::Subwindow;
+                    self.output_lines.push("🔧 Select fields to break (Space to toggle, Enter to confirm):".to_string());
+                }
+                InputType::BreakBlock => {
+                    self.pending_hex_input = input;
+                    self.field_items = Self::get_block_fields();
+                    self.field_selected_index = 0;
+                    self.subwindow_mode = Some(SubwindowMode::BlockFields);
+                    self.input_mode = InputMode::Subwindow;
+                    self.output_lines.push("🔧 Select fields to break (Space to toggle, Enter to confirm):".to_string());
+                }
+                InputType::GenerateTx => {
+                    self.input_mode = InputMode::Normal;
+                    self.generate_tx_interactive(input);
+                }
+                InputType::GenerateBlock => {
+                    self.input_mode = InputMode::Normal;
+                    self.generate_block_interactive(input);
+                }
+                InputType::GetBlockByHeight => {
+                    self.input_mode = InputMode::Normal;
+                    self.get_block_by_height_interactive(input);
+                }
             }
         }
+    }
+
+    fn process_field_selection(&mut self) {
+        let selected_flags: Vec<String> = self.field_items.iter()
+            .filter(|item| item.selected)
+            .map(|item| item.flag.clone())
+            .collect();
+        
+        if selected_flags.is_empty() {
+            self.output_lines.push("❌ No fields selected".to_string());
+            self.close_subwindow();
+            return;
+        }
+        
+        match self.subwindow_mode.clone() {
+            Some(SubwindowMode::TransactionFields) => {
+                self.output_lines.push("🔨 Breaking transaction with selected fields...".to_string());
+                let result = Generator::break_transaction(self.pending_hex_input.clone(), selected_flags);
+                self.output_lines.push("🔨 Transaction Breaking Result:".to_string());
+                self.output_lines.push(result);
+            }
+            Some(SubwindowMode::BlockFields) => {
+                self.output_lines.push("🔨 Breaking block with selected fields...".to_string());
+                let result = Generator::break_block(self.pending_hex_input.clone(), selected_flags, Vec::new());
+                self.output_lines.push("🔨 Block Breaking Result:".to_string());
+                self.output_lines.push(result);
+            }
+            None => {}
+        }
+        
+        self.close_subwindow();
+    }
+
+    fn close_subwindow(&mut self) {
+        self.subwindow_mode = None;
+        self.field_items.clear();
+        self.field_selected_index = 0;
+        self.pending_hex_input.clear();
+        self.input_mode = InputMode::Normal;
     }
 
     fn cancel_input(&mut self) {
         self.input_mode = InputMode::Normal;
         self.awaiting_input = None;
         self.input_buffer.clear();
+        self.close_subwindow();
         self.output_lines.push("❌ Input cancelled".to_string());
     }
 
@@ -357,60 +580,6 @@ impl App {
                 self.output_lines.push(format!("❌ Error decoding block header: {}", e));
             }
         }
-    }
-
-    fn break_transaction_interactive(&mut self, input: String) {
-        let parts: Vec<&str> = input.split_whitespace().collect();
-        if parts.is_empty() {
-            self.output_lines.push("❌ No transaction provided".to_string());
-            return;
-        }
-        
-        let raw_transaction = parts[0].to_string();
-        let flags: Vec<String> = parts[1..].iter().map(|s| s.to_string()).collect();
-        
-        if flags.is_empty() {
-            self.output_lines.push("❌ No flags provided. Available flags: --version, --txid, --vout, --script-sig, --sequence, --amount, --script-pubkey, --witness, --locktime, --all".to_string());
-            return;
-        }
-        
-        self.output_lines.push("🔨 Breaking transaction...".to_string());
-        let result = Generator::break_transaction(raw_transaction, flags);
-        self.output_lines.push("🔨 Transaction Breaking Result:".to_string());
-        self.output_lines.push(result);
-    }
-
-    fn break_block_interactive(&mut self, input: String) {
-        let parts: Vec<&str> = input.split_whitespace().collect();
-        if parts.is_empty() {
-            self.output_lines.push("❌ No block header provided".to_string());
-            return;
-        }
-        
-        let block_header = parts[0].to_string();
-        let args: Vec<String> = parts[1..].iter().map(|s| s.to_string()).collect();
-        
-        if args.is_empty() {
-            self.output_lines.push("❌ No flags provided. Available flags: --version, --prev-hash, --merkle-root, --timestamp, --bits, --nonce, --all".to_string());
-            return;
-        }
-        
-        // Separate flags from config options
-        let mut flags = Vec::new();
-        let mut config = Vec::new();
-        
-        for arg in args {
-            if arg.starts_with("--version-override=") || arg.starts_with("--timestamp-offset=") || arg == "--zero-hashes" {
-                config.push(arg);
-            } else {
-                flags.push(arg);
-            }
-        }
-        
-        self.output_lines.push("🔨 Breaking block...".to_string());
-        let result = Generator::break_block(block_header, flags, config);
-        self.output_lines.push("🔨 Block Breaking Result:".to_string());
-        self.output_lines.push(result);
     }
 
     fn generate_tx_interactive(&mut self, input: String) {
@@ -513,10 +682,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
     let mut clipboard = ClipboardContext::new().unwrap();
 
     loop {
-        // Gere as linhas expandidas para navegação/cópia
+        // Generate expanded lines for navigation/copying
         let expanded_lines: Vec<String> = app.output_lines.iter()
             .flat_map(|line| json_to_lines(line))
             .collect();
+        
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == KeyEventKind::Press {
@@ -536,7 +706,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                                 // Execute command on Enter
                                 KeyCode::Enter => app.execute_command(),
-                                // Atalhos de teclado para comandos
+                                // Keyboard shortcuts for commands
                                 KeyCode::Char(c) => {
                                     if let Some(idx) = app.command_items.iter().position(|item| item.shortcut == Some(c)) {
                                         app.selected_index = idx;
@@ -545,7 +715,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                         app.should_quit = true;
                                     }
                                 }
-                                // Alternar para seleção de output
+                                // Switch to output selection
                                 KeyCode::Tab => {
                                     app.input_mode = InputMode::OutputSelect;
                                     app.output_selected_index = Some(app.output_lines.len().saturating_sub(1));
@@ -596,8 +766,33 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                                 _ => {}
                             }
+                        },
+                        InputMode::Subwindow => {
+                            match key.code {
+                                KeyCode::Up => {
+                                    if app.field_selected_index > 0 {
+                                        app.field_selected_index -= 1;
+                                    }
+                                }
+                                KeyCode::Down => {
+                                    if app.field_selected_index < app.field_items.len() - 1 {
+                                        app.field_selected_index += 1;
+                                    }
+                                }
+                                KeyCode::Char(' ') => {
+                                    if let Some(item) = app.field_items.get_mut(app.field_selected_index) {
+                                        item.selected = !item.selected;
+                                    }
+                                }
+                                KeyCode::Enter => app.process_field_selection(),
+                                KeyCode::Esc => app.close_subwindow(),
+                                _ => {}
+                            }
                         }
+                    
+                    
                     }
+
                 }
             }
         }
@@ -610,11 +805,12 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
 }
 
 fn ui(f: &mut Frame, app: &App) {
-    let chunks = Layout::default()
+    let main_chunks = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(30), Constraint::Min(0)].as_ref())
         .split(f.area());
 
+    // Render commands panel (left)
     let items: Vec<ListItem> = app
         .command_items
         .iter()
@@ -632,24 +828,76 @@ fn ui(f: &mut Frame, app: &App) {
     let list = List::new(items)
         .block(Block::default().borders(Borders::ALL).title("🔧 Commands"))
         .highlight_style(Style::default().fg(Color::Black).bg(Color::LightBlue));
-    f.render_widget(list, chunks[0]);
+    f.render_widget(list, main_chunks[0]);
 
-    let right_chunks = if app.input_mode == InputMode::Input {
-        Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
-            .split(chunks[1])
-    } else {
-        vec![chunks[1]].into()
+    // Prepare right panel based on mode
+    let right_panel = main_chunks[1];
+    let right_chunks = match app.input_mode {
+        InputMode::Subwindow => {
+            Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(app.field_items.len() as u16 + 2), // Subwindow height
+                    Constraint::Min(0) // Output area
+                ])
+                .split(right_panel)
+        }
+        InputMode::Input => {
+            Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Min(0), Constraint::Length(3)].as_ref())
+                .split(right_panel)
+        }
+        _ => {
+            vec![right_panel].into()
+        }
     };
 
-    // Gere todas as linhas expandidas do output
+    // Render subwindow if active
+    if app.input_mode == InputMode::Subwindow {
+        let subwindow_chunk = right_chunks[0];
+        let title = match app.subwindow_mode {
+            Some(SubwindowMode::TransactionFields) => "🔧 Select Transaction Fields to Break",
+            Some(SubwindowMode::BlockFields) => "🔧 Select Block Fields to Break",
+            None => "Field Selection",
+        };
+
+        let field_items: Vec<ListItem> = app
+            .field_items
+            .iter()
+            .enumerate()
+            .map(|(i, item)| {
+                let prefix = if item.selected { "[✓] " } else { "[ ] " };
+                let content = format!("{}{}: {}", prefix, item.name, item.description);
+                
+                let style = if i == app.field_selected_index {
+                    Style::default().fg(Color::Black).bg(Color::LightBlue)
+                } else {
+                    Style::default()
+                };
+                
+                ListItem::new(Text::styled(content, style))
+            })
+            .collect();
+
+        let field_list = List::new(field_items)
+            .block(Block::default().borders(Borders::ALL).title(title))
+            .highlight_style(Style::default().fg(Color::Black).bg(Color::LightBlue));
+        
+        f.render_widget(field_list, subwindow_chunk);
+    }
+
+    // Render output area
+    let output_chunk = match app.input_mode {
+        InputMode::Subwindow => right_chunks[1],
+        InputMode::Input => right_chunks[0],
+        _ => right_chunks[0],
+    };
+
     let expanded_lines: Vec<String> = app.output_lines.iter()
         .flat_map(|line| json_to_lines(line))
         .collect();
 
-    // Renderize as linhas expandidas
-    let output_chunk = right_chunks[0];
     let output_lines: Vec<Line> = expanded_lines.iter().enumerate().map(|(idx, line)| {
         if app.input_mode == InputMode::OutputSelect && app.output_selected_index == Some(idx) {
             Line::from(vec![Span::styled(line, Style::default().bg(Color::LightYellow).fg(Color::Black))])
@@ -665,8 +913,8 @@ fn ui(f: &mut Frame, app: &App) {
 
     f.render_widget(output, output_chunk);
 
-    // Input area (only visible in input mode)
-    if app.input_mode == InputMode::Input && right_chunks.len() > 1 {
+    // Render input area if needed
+    if app.input_mode == InputMode::Input {
         let input_chunk = right_chunks[1];
         let input = Paragraph::new(app.input_buffer.as_str())
             .block(Block::default().borders(Borders::ALL).title("📝 Input"))
@@ -674,27 +922,30 @@ fn ui(f: &mut Frame, app: &App) {
         f.render_widget(input, input_chunk);
     }
 
-    // Show command description in the bottom
-    if !app.command_items.is_empty() && app.selected_index < app.command_items.len() {
-        let description = &app.command_items[app.selected_index].description;
-        let status_text = if app.input_mode == InputMode::Input {
-            "INPUT MODE - Enter to confirm, Esc to cancel"
-        } else if app.input_mode == InputMode::OutputSelect {
-            "OUTPUT SELECT - ↑/↓: Navegar, y: Copiar linha, Tab/Esc: Voltar"
-        } else {
-            &format!("{} | ↑/↓: Navegar, Enter: Selecionar, Tab: Output, q: Sair", description)
-        };
-        
-        let status_chunk = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Min(0), Constraint::Length(1)].as_ref())
-            .split(f.area())[1];
-            
-        let status = Paragraph::new(status_text)
-            .style(Style::default().fg(Color::Gray))
-            .alignment(Alignment::Center);
-        f.render_widget(status, status_chunk);
-    }
+    // Show status bar
+    let status_chunk = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(0), Constraint::Length(1)].as_ref())
+        .split(f.area())[1];
+    
+    let status_text = match app.input_mode {
+        InputMode::Normal => {
+            if !app.command_items.is_empty() && app.selected_index < app.command_items.len() {
+                format!("{} | ↑/↓: Navigate, Enter: Select, Tab: Output, q: Quit", 
+                        app.command_items[app.selected_index].description)
+            } else {
+                "Ready".to_string()
+            }
+        }
+        InputMode::Input => "INPUT MODE - Enter to confirm, Esc to cancel".to_string(),
+        InputMode::OutputSelect => "OUTPUT SELECT - ↑/↓: Navigate, y: Copy line, Tab/Esc: Back".to_string(),
+        InputMode::Subwindow => "FIELD SELECTION - ↑/↓: Navigate, Space: Toggle, Enter: Confirm, Esc: Cancel".to_string(),
+    };
+    
+    let status = Paragraph::new(status_text)
+        .style(Style::default().fg(Color::Gray))
+        .alignment(Alignment::Center);
+    f.render_widget(status, status_chunk);
 }
 
 fn json_to_lines(json_str: &str) -> Vec<String> {
