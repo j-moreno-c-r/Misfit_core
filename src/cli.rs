@@ -31,79 +31,13 @@ pub enum Commands {
     Clear,
     Exit,
     #[command(name = "decode-transaction")]
-    DecodeTransaction {
-        raw_transaction: String
-    },
-    #[command(name = "decode-block")]
-    DecodeBlock {
-        block_header: String
-    },
-    #[command(name = "break-transaction")]
-    BreakTransaction {
-        raw_transaction: String,
-        #[arg(long, help = "Invalidate transaction version")]
-        version: bool,
-        #[arg(long, help = "Invalidate input transaction ID")]
-        txid: bool,
-        #[arg(long, help = "Invalidate input vout")]
-        vout: bool,
-        #[arg(long = "script-sig", help = "Invalidate input script signature")]
-        script_sig: bool,
-        #[arg(long, help = "Invalidate input sequence number")]
-        sequence: bool,
-        #[arg(long, help = "Invalidate output amount")]
-        amount: bool,
-        #[arg(long = "script-pubkey", help = "Invalidate output script pubkey")]
-        script_pubkey: bool,
-        #[arg(long, help = "Invalidate witness data")]
-        witness: bool,
-        #[arg(long, help = "Invalidate transaction locktime")]
-        locktime: bool,
-        #[arg(long, help = "Invalidate all transaction fields")]
-        all: bool,
-    },
-    #[command(name = "break-block")]
-    BreakBlock {
-        block_header: String,
-        #[arg(long, help = "Invalidate block version")]
-        version: bool,
-        #[arg(long = "prev-hash", help = "Invalidate previous block hash")]
-        prev_hash: bool,
-        #[arg(long = "merkle-root", help = "Invalidate merkle root")]
-        merkle_root: bool,
-        #[arg(long, help = "Invalidate timestamp")]
-        timestamp: bool,
-        #[arg(long, help = "Invalidate difficulty bits")]
-        bits: bool,
-        #[arg(long, help = "Invalidate nonce")]
-        nonce: bool,
-        #[arg(long, help = "Invalidate all block fields")]
-        all: bool,
-        #[arg(long, help = "Override version with specific value")]
-        version_override: Option<i32>,
-        #[arg(long, help = "Add/subtract seconds to timestamp")]
-        timestamp_offset: Option<i64>,
-        #[arg(long, help = "Use zero hashes instead of random")]
-        zero_hashes: bool,
-    },
-    Tx {
-        #[arg(default_value_t = 1)]
-        txscount: u32,
-        campuses: Vec<String>,
-    },
-    Block {
-        #[arg(default_value_t = 1)]
-        txscount: u32,
-    },
+    DecodeTransaction { raw_transaction: String },
     #[command(name = "regtest-start")]
     RegtestStart,
     #[command(name = "regtest-stop")]
     RegtestStop,
-    #[command(name = "get-blockby-height")]
-    GetBlockbyHeight {
-        height: u64,
-    },
 }
+
 
 struct App {
     command_items: Vec<CommandItem>,
@@ -116,8 +50,6 @@ struct App {
     regtest_manager: RegtestManager,
     output_selected_index: Option<usize>, 
     _expanded_output_lines: Vec<String>,
-    
-    // Subwindow state
     subwindow_mode: Option<SubwindowMode>,
     field_items: Vec<FieldItem>,
     field_selected_index: usize,
