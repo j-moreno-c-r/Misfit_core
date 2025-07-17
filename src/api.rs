@@ -48,8 +48,8 @@ impl Generator {
         [
             format!("{:#?} ", block.header),
             format!("Block Header encoded: {:#?}", encode::serialize_hex(&block.header)),
-            format!("Raw txs: {:#?}", raw_tx),
-            format!("TxID: {:#?}", tx_ids),
+            format!("Raw txs: {raw_tx:#?}"),
+            format!("TxID: {tx_ids:#?}"),
         ]
         .join("\n---\n")
     }
@@ -79,8 +79,8 @@ impl Generator {
     }
 
         [
-            format!("Raw Transactions: {:#?}", raw_tx),
-            format!("TXIDs: {:#?}", txid),
+            format!("Raw Transactions: {raw_tx:#?}"),
+            format!("TXIDs: {txid:#?}"),
         ]
         .join("\n---\n")
     }
@@ -113,7 +113,7 @@ impl Generator {
         // Decode the transaction
         let decoded_tx = match Self::decode_raw_transaction(transaction.clone()) {
             Ok(tx) => tx,
-            Err(e) => return format!("Error decoding transaction: {}", e),
+            Err(e) => return format!("Error decoding transaction: {e}"),
         };
 
         // Create invalid version based on specified flags
@@ -166,8 +166,8 @@ impl Generator {
         }
 
         // Display results
-        result.push_str(&format!("\nInputed Transaction:\n{}\n\n", transaction));
-        result.push_str(&format!("Invalidated Transaction:\n{:#?}", invalid_tx));
+        result.push_str(&format!("\nInputed Transaction:\n{transaction}\n\n"));
+        result.push_str(&format!("Invalidated Transaction:\n{invalid_tx:#?}"));
         result.push_str(&format!(
             "Invalidated Raw Transaction:\n{:#?}\n\n",
             encode::serialize_hex(&invalid_tx)
@@ -196,7 +196,7 @@ impl Generator {
         // Decode the block header
         let decoded_header = match Self::decoder_block_header(block_header.clone()) {
             Ok(header) => header,
-            Err(e) => return format!("Error decoding block header: {}", e),
+            Err(e) => return format!("Error decoding block header: {e}"),
         };
 
         // Create block from header for processing
@@ -236,12 +236,11 @@ impl Generator {
 
         // Add configuration info
         if let Some(version_override) = processing_config.version_override {
-            result.push_str(&format!("  - Version Override: {}\n", version_override));
+            result.push_str(&format!("  - Version Override: {version_override}\n"));
         }
         if let Some(timestamp_offset) = processing_config.timestamp_offset {
             result.push_str(&format!(
-                "  - Timestamp Offset: {} seconds\n",
-                timestamp_offset
+                "  - Timestamp Offset: {timestamp_offset} seconds\n"
             ));
         }
         if !processing_config.randomize_hashes {
@@ -295,8 +294,7 @@ impl Generator {
         // Display hex representation of broken header
         let broken_header_hex = hex::encode(encode::serialize(&broken_block.header));
         result.push_str(&format!(
-            "\nBroken Block Header (Hex):\n{}\n",
-            broken_header_hex
+            "\nBroken Block Header (Hex):\n{broken_header_hex}\n"
         ));
 
         result
@@ -320,7 +318,7 @@ impl Generator {
                 "--locktime" => Some(transaction::flags::InvalidationFlag::Locktime),
                 "--all" => Some(transaction::flags::InvalidationFlag::All),
                 _ => {
-                    println!("Warning: Unknown flag '{}' ignored", flag);
+                    println!("Warning: Unknown flag '{flag}' ignored");
                     None
                 }
             };
@@ -348,7 +346,7 @@ impl Generator {
                 "--nonce" => Some(block::block::BlockField::Nonce),
                 "--all" => Some(block::block::BlockField::All),
                 _ => {
-                    println!("Warning: Unknown block field flag '{}' ignored", flag);
+                    println!("Warning: Unknown block field flag '{flag}' ignored");
                     None
                 }
             };
@@ -379,8 +377,7 @@ impl Generator {
                         config.version_override = Some(value);
                     } else {
                         println!(
-                            "Warning: Invalid version override value '{}' ignored",
-                            value_str
+                            "Warning: Invalid version override value '{value_str}' ignored"
                         );
                     }
                 }
@@ -390,15 +387,14 @@ impl Generator {
                         config.timestamp_offset = Some(value);
                     } else {
                         println!(
-                            "Warning: Invalid timestamp offset value '{}' ignored",
-                            value_str
+                            "Warning: Invalid timestamp offset value '{value_str}' ignored"
                         );
                     }
                 }
             } else if config_option == "--zero-hashes" {
                 config.randomize_hashes = false;
             } else {
-                println!("Warning: Unknown config option '{}' ignored", config_option);
+                println!("Warning: Unknown config option '{config_option}' ignored");
             }
         }
 

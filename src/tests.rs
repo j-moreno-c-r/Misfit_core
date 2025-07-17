@@ -10,11 +10,9 @@ mod tests {
         assert!(result.contains("TXIDs:"));
         assert!(result.contains("---"));
         
-        // Split by separator and check structure
         let sections: Vec<&str> = result.split("\n---\n").collect();
         assert_eq!(sections.len(), 2);
         
-        // Verify sections have content
         assert!(sections[0].starts_with("Raw Transactions:"));
         assert!(sections[1].starts_with("TXIDs:"));
     }
@@ -24,16 +22,13 @@ mod tests {
         let tx_count = 3;
         let result = Generator::transaction(tx_count);
         
-        // Check that the result contains expected sections
         assert!(result.contains("Raw Transactions:"));
         assert!(result.contains("TXIDs:"));
         
-        // Count occurrences to verify we have the right number of transactions
-        // This is a basic check - the exact format depends on the debug implementation
+
         let raw_tx_section = result.split("TXIDs:").next().unwrap();
         let txid_section = result.split("TXIDs:").nth(1).unwrap();
         
-        // Both sections should contain content
         assert!(!raw_tx_section.trim().is_empty());
         assert!(!txid_section.trim().is_empty());
     }
@@ -42,7 +37,6 @@ mod tests {
     fn test_generate_zero_transactions() {
         let result = Generator::transaction(0);
         
-        // Should still have structure but with empty arrays
         assert!(result.contains("Raw Transactions:"));
         assert!(result.contains("TXIDs:"));
     }
@@ -113,7 +107,6 @@ mod tests {
         
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
-        // Should only contain the known flags
         assert_eq!(result.len(), 2);
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Version));
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputTxid));
@@ -162,7 +155,6 @@ mod tests {
         
         let result = Generator::parse_cli_config_to_processing_config(cli_config, fields);
         
-        // Invalid values should be ignored, defaults should be used
         assert_eq!(result.version_override, None);
         assert_eq!(result.timestamp_offset, None);
         assert_eq!(result.randomize_hashes, true); 
@@ -190,16 +182,13 @@ mod tests {
 
     #[test]
     fn test_decoder_block_header_with_valid_data() {
-        // This would require a valid block header hex string
         let valid_header = "00e0de23a528751ac3a3e02d8368dce7d902c1cb6561184d735b0700000000000000000023f401455373d8e00c0fef0402b2a9bf45a69ba1a0da0a6175ba571d633fe74c27bdaf6390f50717614aaf14".to_string();
         
         let result = Generator::decoder_block_header(valid_header);
         assert!(result.is_ok());
     }
-
     #[test]
     fn test_break_transaction_with_valid_data() {
-        // Generate a transaction first
         let tx_result = Generator::transaction(1);
 
         let cli_flags = vec!["--version".to_string()];
@@ -207,7 +196,6 @@ mod tests {
         
         assert!(result != tx_result);
     }
-
 
     #[test]
     fn test_break_transaction_with_no_flags() {
@@ -232,7 +220,6 @@ mod tests {
         assert!(result.contains("Use 'help' for usage information"));
     }
 
-    // Test edge cases and error conditions
     
     #[test]
     fn test_empty_cli_flags() {
@@ -278,7 +265,6 @@ mod tests {
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
         assert_eq!(result.len(), 9);
-        // Verify all expected flags are present
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Version));
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputTxid));
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputVout));
@@ -350,7 +336,6 @@ mod tests {
                 assert!(witness.is_empty(), "Legacy script type {:?} should have empty witness", script_type);
             }
             _ => {
-                // SegWit e Taproot: witness should be filled
                 assert!(!witness.is_empty(), "Script type {:?} should have non-empty witness", script_type);
             }
         }

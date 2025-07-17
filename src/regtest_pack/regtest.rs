@@ -83,16 +83,16 @@ impl RegtestManager {
 
     pub fn handle_getblockbyheight(&self, target_height: u64) -> Result<(), Box<dyn Error>> {
         let current_height = self.get_current_height()?;
-        println!("Current blockchain height: {}", current_height);
+        println!("Current blockchain height: {current_height}");
 
         if target_height < current_height {
-            println!("Block at height {} already exists. Retrieving...", target_height);
+            println!("Block at height {target_height} already exists. Retrieving...");
         } else if target_height > current_height {
             let blocks_needed = target_height - current_height;
             let address = self.generate_address()?;
-            println!("Generating {} blocks to reach height {}...", blocks_needed, target_height);
+            println!("Generating {blocks_needed} blocks to reach height {target_height}...");
             self.mine_blocks(&address, blocks_needed)?;
-            println!("Successfully generated {} blocks", blocks_needed);
+            println!("Successfully generated {blocks_needed} blocks");
         }
 
         self.display_block(target_height)
@@ -196,7 +196,7 @@ impl RegtestManager {
         }
 
         let block_data = String::from_utf8(block_output.stdout)?;
-        println!("Block at height {}:\n{}", height, block_data);
+        println!("Block at height {height}:\n{block_data}");
 
         Ok(())
     }

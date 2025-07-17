@@ -118,7 +118,7 @@ pub fn parse_flags(args: Vec<String>) -> HashSet<InvalidationFlag> {
         if let Some(flag) = InvalidationFlag::from_str(flag_str) {
             flags.insert(flag);
         } else {
-            println!("Warning: Unknown flag '{}' ignored", arg);
+            println!("Warning: Unknown flag '{arg}' ignored");
         }
     }
 

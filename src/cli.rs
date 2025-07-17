@@ -110,7 +110,7 @@ pub fn handle() {
         let cli = match Cli::try_parse_from(std::iter::once("").chain(args.iter().copied())) {
             Ok(c) => c,
             Err(e) => {
-                eprintln!("Error: {}", e);
+                eprintln!("Error: {e}");
                 continue;
             }
         };
@@ -231,10 +231,10 @@ fn build_block_flags_and_config(
     
     // Configuration options
     if let Some(override_val) = version_override {
-        config.push(format!("--version-override={}", override_val));
+        config.push(format!("--version-override={override_val}"));
     }
     if let Some(offset) = timestamp_offset {
-        config.push(format!("--timestamp-offset={}", offset));
+        config.push(format!("--timestamp-offset={offset}"));
     }
     if zero_hashes {
         config.push("--zero-hashes".to_string());
@@ -301,7 +301,7 @@ fn transaction_splitter(raw_transaction: String) {
             println!("Output count: {:#?}", decoded.output);
         },
         Err(e) => {
-            eprintln!("Error decoding transaction: {}", e);
+            eprintln!("Error decoding transaction: {e}");
         }
     }
 }
@@ -318,7 +318,7 @@ fn block_splitter(block_header: String) {
             println!("Block Hash: {}", header.block_hash());
         },
         Err(e) => {
-            eprintln!("Error decoding block header: {}", e);
+            eprintln!("Error decoding block header: {e}");
         }
     }
 }
@@ -331,7 +331,7 @@ fn break_transaction(raw_transaction: String, flags: Vec<String>) {
     
     let result = Generator::break_transaction(raw_transaction, flags);
     println!("🔨 Transaction Breaking Result:");
-    println!("{}", result);
+    println!("{result}");
 }
 
 fn break_block(block_header: String, flags: Vec<String>, config: Vec<String>) {
@@ -342,17 +342,17 @@ fn break_block(block_header: String, flags: Vec<String>, config: Vec<String>) {
     
     let result = Generator::break_block(block_header, flags, config);
     println!("🔨 Block Breaking Result:");
-    println!("{}", result);
+    println!("{result}");
 }
 
 fn transaction(txscount: u32) {
     let transactions = Generator::transaction(txscount);
-    println!("Transactions: {}", transactions);
+    println!("Transactions: {transactions}");
 }
 
 fn block(txscount: u32) {
     let block = Generator::block(txscount);
-    println!("Block: {}", block);
+    println!("Block: {block}");
 }
 fn clear() {
     print!("\x1B[2J\x1B[1;1H"); 
@@ -361,6 +361,6 @@ fn clear() {
 
 fn handle_result(result: Result<(), Box<dyn std::error::Error>>) {
     if let Err(e) = result {
-        eprintln!("Error: {} 🚨", e);
+        eprintln!("Error: {e} 🚨");
     }
 }

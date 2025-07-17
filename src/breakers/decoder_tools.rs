@@ -114,7 +114,7 @@ impl BlockUtils {
 
     // Print block header information
     pub fn print_header_info(header: &Header, label: &str) {
-        println!("\n=== {} ===", label);
+        println!("\n=== {label} ===");
         println!("Version: {}", header.version.to_consensus());
         println!("Previous Block: {}", header.prev_blockhash);
         println!("Merkle Root: {}", header.merkle_root);
