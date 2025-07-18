@@ -341,4 +341,42 @@ mod tests {
         }
 }
 }
+    
+    #[test]
+fn test_block_segwit_bip141_commitment() {
+    use misfit_core::block::generator::GenerateBlock;
+    use misfit_core::block::random::block::BlockParams;
+    use misfit_core::transaction;
+    let tx = transaction::generator::GenerateTx::valid_random(
+        transaction::random::transaction::TxParams {
+            input: Some(transaction::random::input::InputParams {
+                script_params: Some(transaction::random::script::ScriptParams {
+                    script_type: Some(transaction::random::script::ScriptTypes::P2WPKH),
+                    private_key: None,
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    );
+
+    let block = GenerateBlock::valid_random(BlockParams {
+        header: None,
+        txs: Some(vec![tx]),
+    });
+
+    let coinbase = &block.txdata[0];
+    assert!(!coinbase.input[0].witness.is_empty(), "Coinbase witness não está presente");
+    assert_eq!(coinbase.input[0].witness[0].len(), 32, "Witness reservado deve ter 32 bytes");
+
+    let found_commitment = coinbase.output.iter().any(|out| {
+        let script = out.script_pubkey.as_bytes();
+        script.len() == 38 &&
+            script[0] == 0x6a && // OP_RETURN
+            script[1] == 0x24 && // PUSH 36 bytes
+            script[2..6] == [0xaa, 0x21, 0xa9, 0xed] // prefixo BIP141
+    });
+    assert!(found_commitment, "Output de compromisso wTXID não encontrado na coinbase");
+}
+
 }
