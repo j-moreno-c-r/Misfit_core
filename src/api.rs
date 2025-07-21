@@ -40,13 +40,15 @@ impl Generator {
         tx_ids.push(txid);
 }
 
-        let block = GenerateBlock::valid_random(BlockParams {
+        let (block, height) = GenerateBlock::valid_random(BlockParams {
             header: None,
             txs: Some(txs),
+            height: None,
         });
 
         [
             format!("{:#?} ", block.header),
+            format!("Block Height: {}", height),
             format!("Block Header encoded: {:#?}", encode::serialize_hex(&block.header)),
             format!("Raw txs: {raw_tx:#?}"),
             format!("TxID: {tx_ids:#?}"),

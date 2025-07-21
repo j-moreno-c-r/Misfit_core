@@ -41,36 +41,35 @@ mod tests {
         assert!(result.contains("TXIDs:"));
     }
 
-      #[test]
-    fn test_generate_one_block_with_one_transaction() {
-        let result = Generator::block(1);
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-        assert!(result.contains("Header"));
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));
-    }
-      #[test]
-    fn generate_zero_tx_block() {
-        let result = Generator::block(0);
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-        assert!(result.contains("Header"));
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));  
-    }
+#[test]
+fn test_generate_one_block_with_one_transaction() {
+    let result = Generator::block(1);
+    let sections: Vec<&str> = result.split("\n---\n").collect();
+    assert_eq!(sections.len(), 5); 
+    assert!(result.contains("Header"));
+    assert!(result.contains("Raw txs:"));
+    assert!(result.contains("TxID:"));
+}
 
-    #[test]
-    fn test_generate_block_with_multiple_transactions() {
-        let tx_count = 10;
-        let result = Generator::block(tx_count);
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-    }
+#[test]
+fn generate_zero_tx_block() {
+    let result = Generator::block(0);
+    let sections: Vec<&str> = result.split("\n---\n").collect();
+    assert_eq!(sections.len(), 5); 
+    assert!(result.contains("Header"));
+    assert!(result.contains("Raw txs:"));
+    assert!(result.contains("TxID:"));  
+}
 
-
+#[test]
+fn test_generate_block_with_multiple_transactions() {
+    let tx_count = 10;
+    let result = Generator::block(tx_count);
+    assert!(result.contains("Raw txs:"));
+    assert!(result.contains("TxID:"));
+    let sections: Vec<&str> = result.split("\n---\n").collect();
+    assert_eq!(sections.len(), 5); 
+}
     #[test]
     fn test_parse_cli_flags_to_invalidation_flags() {
         let flags = vec![
@@ -360,9 +359,10 @@ fn test_block_segwit_bip141_commitment() {
         }
     );
 
-    let block = GenerateBlock::valid_random(BlockParams {
+    let (block, _height) = GenerateBlock::valid_random(BlockParams {
         header: None,
         txs: Some(vec![tx]),
+        height: None,
     });
 
     let coinbase = &block.txdata[0];
@@ -374,9 +374,9 @@ fn test_block_segwit_bip141_commitment() {
         script.len() == 38 &&
             script[0] == 0x6a && // OP_RETURN
             script[1] == 0x24 && // PUSH 36 bytes
-            script[2..6] == [0xaa, 0x21, 0xa9, 0xed] // prefixo BIP141
+            script[2..6] == [0xaa, 0x21, 0xa9, 0xed] // prefix BIP141
     });
     assert!(found_commitment, "Output de compromisso wTXID não encontrado na coinbase");
-}
+    }
 
 }

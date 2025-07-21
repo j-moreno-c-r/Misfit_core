@@ -15,26 +15,29 @@ use super::header::{HeaderParams, RandomHeader};
 pub struct BlockParams {
     pub header: Option<Header>,
     pub txs: Option<Vec<Transaction>>,
+    pub height: Option<u32>,
 }
 
 
 
 pub trait RandomBlock {
-    fn random(params: BlockParams) -> Block;
+    fn random(params: BlockParams) -> (Block, u32);
 }
 
 
 impl RandomBlock for Block {
-    fn random(params: BlockParams) -> Block {
-        let tx_data = params.txs.unwrap_or_else(|| {
+    fn random(mut params: BlockParams) -> (Block, u32) {
+        let  block_height = params.height.unwrap_or_else(|| rand::thread_rng().gen_range(1..10_000_000));
+        params.height = Some(block_height);
+            let tx_data = params.txs.unwrap_or_else(|| {
             let random = rand::thread_rng().gen_range(1..10);
-
             let mut txs = vec![];
             for _ in 0..random {
-                let tx_info = GenerateTx::valid_random(TxParams::default());
+                let mut tx_params = TxParams::default();
+                tx_params.block_height = Some(block_height); // NOVO
+                let tx_info = GenerateTx::valid_random(tx_params);
                 txs.push(tx_info);
             }
-
             txs
         });
 
@@ -91,9 +94,11 @@ impl RandomBlock for Block {
             Header::random(header_params)
         });
 
-        Block {
+        let block =  Block {
             header,
             txdata: tx_data,
-        }
+        };
+
+        (block, block_height)
     }
 }

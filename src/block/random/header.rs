@@ -39,7 +39,8 @@ impl RandomHeader for Header {
                 let mut block_params = BlockParams::default();
                 block_params.header = Some(Header::random(h_params));
 
-                Block::random(block_params).block_hash()
+                let (block, _) = Block::random(block_params); 
+                block.block_hash() 
             }),
             merkle_root: params
                 .merkle_root

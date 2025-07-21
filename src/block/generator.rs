@@ -13,7 +13,7 @@ use crate::transaction::{
 pub struct GenerateBlock {}
 
 impl GenerateBlock {
-    pub fn valid_random(mut params: BlockParams) -> Block {
+    pub fn valid_random(mut params: BlockParams) -> (Block, u32) {
         let mut input_params = InputParams::default();
         input_params.outpoint = Some(OutPoint::null());
 
@@ -26,6 +26,6 @@ impl GenerateBlock {
         txs.insert(0, coinbase_info);
         params.txs = Some(txs);
 
-        Block::random(params)
+        Block::random(params)   
     }
 }
