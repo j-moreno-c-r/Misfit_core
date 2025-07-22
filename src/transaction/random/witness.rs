@@ -38,7 +38,14 @@ impl RandomWitness for Witness {
     fn random(params: WitnessParams) -> Witness {
         let transaction = params.transaction.unwrap_or_else(|| {
             let mut random_tx_params = TxParams::default();
-            let mut random_input_params = InputParams::default();
+            let mut random_input_params = InputParams {
+                witness: Some(Witness::default()),
+                outpoint: Some(OutPoint {
+                    txid: Txid::all_zeros(),
+                    vout: rand::thread_rng().gen::<u32>(),
+                }),
+                ..Default::default()
+            };
 
             random_input_params.witness = Some(Witness::default());
             random_input_params.outpoint = Some(OutPoint {
@@ -58,7 +65,15 @@ impl RandomWitness for Witness {
         let amount = transaction.output[vout].value;
 
         let (script, script_type) = params.script.unwrap_or_else(|| {
-            let mut script_params = ScriptParams::default();
+            let mut script_params = ScriptParams {
+            script_type: Some(match rand::thread_rng().gen_range(0..3) {
+                0 => ScriptTypes::P2TR,
+                1 => ScriptTypes::P2TWEAKEDTR,
+                2 => ScriptTypes::P2WPKH,
+                _ => ScriptTypes::P2WSH,
+            }),
+            ..Default::default()
+};
 
             script_params.script_type = Some(match rand::thread_rng().gen_range(0..3) {
                 0 => ScriptTypes::P2TR,

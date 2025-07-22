@@ -96,7 +96,7 @@ impl BitsProcessor {
         let mantissa = bits & 0xffffff;
         
         // Basic validation: exponent should be reasonable, mantissa non-zero for valid target
-        exponent >= 0x03 && exponent <= 0x20 && mantissa != 0
+        (0x03..=0x20).contains(&exponent) && mantissa != 0
     }
 
     /// Check if bits represent minimum difficulty

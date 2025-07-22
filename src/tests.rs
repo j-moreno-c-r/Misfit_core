@@ -10,11 +10,9 @@ mod tests {
         assert!(result.contains("TXIDs:"));
         assert!(result.contains("---"));
         
-        // Split by separator and check structure
         let sections: Vec<&str> = result.split("\n---\n").collect();
         assert_eq!(sections.len(), 2);
         
-        // Verify sections have content
         assert!(sections[0].starts_with("Raw Transactions:"));
         assert!(sections[1].starts_with("TXIDs:"));
     }
@@ -24,16 +22,13 @@ mod tests {
         let tx_count = 3;
         let result = Generator::transaction(tx_count);
         
-        // Check that the result contains expected sections
         assert!(result.contains("Raw Transactions:"));
         assert!(result.contains("TXIDs:"));
         
-        // Count occurrences to verify we have the right number of transactions
-        // This is a basic check - the exact format depends on the debug implementation
+
         let raw_tx_section = result.split("TXIDs:").next().unwrap();
         let txid_section = result.split("TXIDs:").nth(1).unwrap();
         
-        // Both sections should contain content
         assert!(!raw_tx_section.trim().is_empty());
         assert!(!txid_section.trim().is_empty());
     }
@@ -42,41 +37,39 @@ mod tests {
     fn test_generate_zero_transactions() {
         let result = Generator::transaction(0);
         
-        // Should still have structure but with empty arrays
         assert!(result.contains("Raw Transactions:"));
         assert!(result.contains("TXIDs:"));
     }
 
-      #[test]
-    fn test_generate_one_block_with_one_transaction() {
-        let result = Generator::block(1);
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-        assert!(result.contains("Header"));
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));
-    }
-      #[test]
-    fn generate_zero_tx_block() {
-        let result = Generator::block(0);
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-        assert!(result.contains("Header"));
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));  
-    }
+#[test]
+fn test_generate_one_block_with_one_transaction() {
+    let result = Generator::block(1);
+    let sections: Vec<&str> = result.split("\n---\n").collect();
+    assert_eq!(sections.len(), 5); 
+    assert!(result.contains("Header"));
+    assert!(result.contains("Raw txs:"));
+    assert!(result.contains("TxID:"));
+}
 
-    #[test]
-    fn test_generate_block_with_multiple_transactions() {
-        let tx_count = 10;
-        let result = Generator::block(tx_count);
-        assert!(result.contains("Raw txs:"));
-        assert!(result.contains("TxID:"));
-        let sections: Vec<&str> = result.split("\n---\n").collect();
-        assert_eq!(sections.len(), 4); // <-- Ajuste aqui (antes era 3)
-    }
+#[test]
+fn generate_zero_tx_block() {
+    let result = Generator::block(0);
+    let sections: Vec<&str> = result.split("\n---\n").collect();
+    assert_eq!(sections.len(), 5); 
+    assert!(result.contains("Header"));
+    assert!(result.contains("Raw txs:"));
+    assert!(result.contains("TxID:"));  
+}
 
-
+#[test]
+fn test_generate_block_with_multiple_transactions() {
+    let tx_count = 10;
+    let result = Generator::block(tx_count);
+    assert!(result.contains("Raw txs:"));
+    assert!(result.contains("TxID:"));
+    let sections: Vec<&str> = result.split("\n---\n").collect();
+    assert_eq!(sections.len(), 5); 
+}
     #[test]
     fn test_parse_cli_flags_to_invalidation_flags() {
         let flags = vec![
@@ -113,7 +106,6 @@ mod tests {
         
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
-        // Should only contain the known flags
         assert_eq!(result.len(), 2);
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Version));
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputTxid));
@@ -130,9 +122,9 @@ mod tests {
         let result = Generator::parse_cli_flags_to_block_fields(flags);
         
         assert_eq!(result.len(), 3);
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Version));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::PrevBlockHash));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Nonce));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Version));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::PrevBlockHash));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Nonce));
     }
 
     #[test]
@@ -142,7 +134,7 @@ mod tests {
             "--timestamp-offset=3600".to_string(),
             "--zero-hashes".to_string(),
         ];
-        let fields = vec![misfit_core::breakers::block::block::BlockField::Version];
+        let fields = vec![misfit_core::breakers::block::block_calls::BlockField::Version];
         
         let result = Generator::parse_cli_config_to_processing_config(cli_config, fields);
         
@@ -162,7 +154,6 @@ mod tests {
         
         let result = Generator::parse_cli_config_to_processing_config(cli_config, fields);
         
-        // Invalid values should be ignored, defaults should be used
         assert_eq!(result.version_override, None);
         assert_eq!(result.timestamp_offset, None);
         assert_eq!(result.randomize_hashes, true); 
@@ -190,16 +181,13 @@ mod tests {
 
     #[test]
     fn test_decoder_block_header_with_valid_data() {
-        // This would require a valid block header hex string
         let valid_header = "00e0de23a528751ac3a3e02d8368dce7d902c1cb6561184d735b0700000000000000000023f401455373d8e00c0fef0402b2a9bf45a69ba1a0da0a6175ba571d633fe74c27bdaf6390f50717614aaf14".to_string();
         
         let result = Generator::decoder_block_header(valid_header);
         assert!(result.is_ok());
     }
-
     #[test]
     fn test_break_transaction_with_valid_data() {
-        // Generate a transaction first
         let tx_result = Generator::transaction(1);
 
         let cli_flags = vec!["--version".to_string()];
@@ -207,7 +195,6 @@ mod tests {
         
         assert!(result != tx_result);
     }
-
 
     #[test]
     fn test_break_transaction_with_no_flags() {
@@ -232,7 +219,6 @@ mod tests {
         assert!(result.contains("Use 'help' for usage information"));
     }
 
-    // Test edge cases and error conditions
     
     #[test]
     fn test_empty_cli_flags() {
@@ -278,7 +264,6 @@ mod tests {
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
         assert_eq!(result.len(), 9);
-        // Verify all expected flags are present
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Version));
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputTxid));
         assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputVout));
@@ -304,12 +289,12 @@ mod tests {
         let result = Generator::parse_cli_flags_to_block_fields(flags);
         
         assert_eq!(result.len(), 6);
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Version));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::PrevBlockHash));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::MerkleRoot));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Timestamp));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Bits));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Nonce));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Version));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::PrevBlockHash));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::MerkleRoot));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Timestamp));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Bits));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Nonce));
     }
     #[test]
     fn test_transaction_witness_for_each_script_type() {
@@ -350,10 +335,48 @@ mod tests {
                 assert!(witness.is_empty(), "Legacy script type {:?} should have empty witness", script_type);
             }
             _ => {
-                // SegWit e Taproot: witness should be filled
                 assert!(!witness.is_empty(), "Script type {:?} should have non-empty witness", script_type);
             }
         }
 }
 }
+    
+    #[test]
+fn test_block_segwit_bip141_commitment() {
+    use misfit_core::block::generator::GenerateBlock;
+    use misfit_core::block::random::block::BlockParams;
+    use misfit_core::transaction;
+    let tx = transaction::generator::GenerateTx::valid_random(
+        transaction::random::transaction::TxParams {
+            input: Some(transaction::random::input::InputParams {
+                script_params: Some(transaction::random::script::ScriptParams {
+                    script_type: Some(transaction::random::script::ScriptTypes::P2WPKH),
+                    private_key: None,
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
+    );
+
+    let (block, _height) = GenerateBlock::valid_random(BlockParams {
+        header: None,
+        txs: Some(vec![tx]),
+        height: None,
+    });
+
+    let coinbase = &block.txdata[0];
+    assert!(!coinbase.input[0].witness.is_empty(), "Coinbase witness não está presente");
+    assert_eq!(coinbase.input[0].witness[0].len(), 32, "Witness reservado deve ter 32 bytes");
+
+    let found_commitment = coinbase.output.iter().any(|out| {
+        let script = out.script_pubkey.as_bytes();
+        script.len() == 38 &&
+            script[0] == 0x6a && // OP_RETURN
+            script[1] == 0x24 && // PUSH 36 bytes
+            script[2..6] == [0xaa, 0x21, 0xa9, 0xed] // prefix BIP141
+    });
+    assert!(found_commitment, "Output de compromisso wTXID não encontrado na coinbase");
+    }
+
 }

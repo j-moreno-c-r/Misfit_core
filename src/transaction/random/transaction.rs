@@ -5,7 +5,7 @@ use super::{
     version::RandomVersion,
 };
 use bitcoin::{
-    absolute::LockTime, transaction::Version, NetworkKind, PrivateKey, Transaction, TxIn, TxOut,
+    absolute::LockTime, transaction::Version, NetworkKind, PrivateKey, Transaction, TxIn, TxOut,ScriptBuf,consensus::Encodable,
 };
 
 
@@ -16,6 +16,7 @@ pub struct TxParams {
     pub input: Option<InputParams>,
     pub output: Option<OutputParams>,
     pub private_key: Option<PrivateKey>,
+    pub block_height: Option<u32>,
 }
 
 
@@ -36,8 +37,10 @@ impl RandomTransacion for Transaction {
         input_params.private_key = Some(private_key);
         output_params.private_key = Some(private_key);
 
-        // Gerar input e output com suas informações
-        let input_info = TxIn::random(input_params);
+        let mut input_info = TxIn::random(input_params);
+        if let Some(height) = params.block_height {
+            input_info.script_sig = prepend_bip34_height(input_info.script_sig, height);
+        }
         let output_info = TxOut::random(output_params);
 
         Transaction {
@@ -47,4 +50,12 @@ impl RandomTransacion for Transaction {
             output: vec![output_info.0.clone()],
         }
     }
+}
+
+fn prepend_bip34_height(script: ScriptBuf, height: u32) -> ScriptBuf {
+    let mut height_bytes = vec![];
+    bitcoin::consensus::encode::VarInt(height as u64).consensus_encode(&mut height_bytes).unwrap();
+    let mut new_bytes = height_bytes;
+    new_bytes.extend_from_slice(script.as_bytes());
+    ScriptBuf::from_bytes(new_bytes)
 }

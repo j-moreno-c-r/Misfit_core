@@ -40,16 +40,18 @@ impl Generator {
         tx_ids.push(txid);
 }
 
-        let block = GenerateBlock::valid_random(BlockParams {
+        let (block, height) = GenerateBlock::valid_random(BlockParams {
             header: None,
             txs: Some(txs),
+            height: None,
         });
 
         [
             format!("{:#?} ", block.header),
+            format!("Block Height: {height}"),
             format!("Block Header encoded: {:#?}", encode::serialize_hex(&block.header)),
-            format!("Raw txs: {:#?}", raw_tx),
-            format!("TxID: {:#?}", tx_ids),
+            format!("Raw txs: {raw_tx:#?}"),
+            format!("TxID: {tx_ids:#?}"),
         ]
         .join("\n---\n")
     }
@@ -79,8 +81,8 @@ impl Generator {
     }
 
         [
-            format!("Raw Transactions: {:#?}", raw_tx),
-            format!("TXIDs: {:#?}", txid),
+            format!("Raw Transactions: {raw_tx:#?}"),
+            format!("TXIDs: {txid:#?}"),
         ]
         .join("\n---\n")
     }
@@ -113,11 +115,11 @@ impl Generator {
         // Decode the transaction
         let decoded_tx = match Self::decode_raw_transaction(transaction.clone()) {
             Ok(tx) => tx,
-            Err(e) => return format!("Error decoding transaction: {}", e),
+            Err(e) => return format!("Error decoding transaction: {e}"),
         };
 
         // Create invalid version based on specified flags
-        let invalid_tx = transaction::transaction::TransactionInvalidator::invalidate(
+        let invalid_tx = transaction::transaction_calls::TransactionInvalidator::invalidate(
             decoded_tx,
             &invalidation_flags,
         );
@@ -166,8 +168,8 @@ impl Generator {
         }
 
         // Display results
-        result.push_str(&format!("\nInputed Transaction:\n{}\n\n", transaction));
-        result.push_str(&format!("Invalidated Transaction:\n{:#?}", invalid_tx));
+        result.push_str(&format!("\nInputed Transaction:\n{transaction}\n\n"));
+        result.push_str(&format!("Invalidated Transaction:\n{invalid_tx:#?}"));
         result.push_str(&format!(
             "Invalidated Raw Transaction:\n{:#?}\n\n",
             encode::serialize_hex(&invalid_tx)
@@ -196,7 +198,7 @@ impl Generator {
         // Decode the block header
         let decoded_header = match Self::decoder_block_header(block_header.clone()) {
             Ok(header) => header,
-            Err(e) => return format!("Error decoding block header: {}", e),
+            Err(e) => return format!("Error decoding block header: {e}"),
         };
 
         // Create block from header for processing
@@ -204,7 +206,7 @@ impl Generator {
             decoder_tools::BlockUtils::create_minimal_block_from_header(decoded_header);
 
         // Process the block using BlockProcessor
-        let processor = block::block::BlockProcessor::new(processing_config.clone());
+        let processor = block::block_calls::BlockProcessor::new(processing_config.clone());
         let broken_block = processor.process_block(&original_block);
 
         // Build the result string
@@ -215,20 +217,20 @@ impl Generator {
 
         if processing_config
             .fields_to_modify
-            .contains(&block::block::BlockField::All)
+            .contains(&block::block_calls::BlockField::All)
         {
             result.push_str("  - ALL FIELDS\n");
         } else {
             for field in &processing_config.fields_to_modify {
                 match field {
-                    block::block::BlockField::Version => result.push_str("  - Block Version\n"),
-                    block::block::BlockField::PrevBlockHash => {
+                    block::block_calls::BlockField::Version => result.push_str("  - Block Version\n"),
+                    block::block_calls::BlockField::PrevBlockHash => {
                         result.push_str("  - Previous Block Hash\n")
                     }
-                    block::block::BlockField::MerkleRoot => result.push_str("  - Merkle Root\n"),
-                    block::block::BlockField::Timestamp => result.push_str("  - Timestamp\n"),
-                    block::block::BlockField::Bits => result.push_str("  - Difficulty Bits\n"),
-                    block::block::BlockField::Nonce => result.push_str("  - Nonce\n"),
+                    block::block_calls::BlockField::MerkleRoot => result.push_str("  - Merkle Root\n"),
+                    block::block_calls::BlockField::Timestamp => result.push_str("  - Timestamp\n"),
+                    block::block_calls::BlockField::Bits => result.push_str("  - Difficulty Bits\n"),
+                    block::block_calls::BlockField::Nonce => result.push_str("  - Nonce\n"),
                     _ => {}
                 }
             }
@@ -236,12 +238,11 @@ impl Generator {
 
         // Add configuration info
         if let Some(version_override) = processing_config.version_override {
-            result.push_str(&format!("  - Version Override: {}\n", version_override));
+            result.push_str(&format!("  - Version Override: {version_override}\n"));
         }
         if let Some(timestamp_offset) = processing_config.timestamp_offset {
             result.push_str(&format!(
-                "  - Timestamp Offset: {} seconds\n",
-                timestamp_offset
+                "  - Timestamp Offset: {timestamp_offset} seconds\n"
             ));
         }
         if !processing_config.randomize_hashes {
@@ -295,8 +296,7 @@ impl Generator {
         // Display hex representation of broken header
         let broken_header_hex = hex::encode(encode::serialize(&broken_block.header));
         result.push_str(&format!(
-            "\nBroken Block Header (Hex):\n{}\n",
-            broken_header_hex
+            "\nBroken Block Header (Hex):\n{broken_header_hex}\n"
         ));
 
         result
@@ -320,7 +320,7 @@ impl Generator {
                 "--locktime" => Some(transaction::flags::InvalidationFlag::Locktime),
                 "--all" => Some(transaction::flags::InvalidationFlag::All),
                 _ => {
-                    println!("Warning: Unknown flag '{}' ignored", flag);
+                    println!("Warning: Unknown flag '{flag}' ignored");
                     None
                 }
             };
@@ -335,20 +335,20 @@ impl Generator {
 
     pub fn parse_cli_flags_to_block_fields(
         cli_flags: Vec<String>,
-    ) -> Vec<block::block::BlockField> {
+    ) -> Vec<block::block_calls::BlockField> {
         let mut fields = Vec::new();
 
         for flag in cli_flags {
             let block_field = match flag.as_str() {
-                "--version" => Some(block::block::BlockField::Version),
-                "--prev-hash" => Some(block::block::BlockField::PrevBlockHash),
-                "--merkle-root" => Some(block::block::BlockField::MerkleRoot),
-                "--timestamp" => Some(block::block::BlockField::Timestamp),
-                "--bits" => Some(block::block::BlockField::Bits),
-                "--nonce" => Some(block::block::BlockField::Nonce),
-                "--all" => Some(block::block::BlockField::All),
+                "--version" => Some(block::block_calls::BlockField::Version),
+                "--prev-hash" => Some(block::block_calls::BlockField::PrevBlockHash),
+                "--merkle-root" => Some(block::block_calls::BlockField::MerkleRoot),
+                "--timestamp" => Some(block::block_calls::BlockField::Timestamp),
+                "--bits" => Some(block::block_calls::BlockField::Bits),
+                "--nonce" => Some(block::block_calls::BlockField::Nonce),
+                "--all" => Some(block::block_calls::BlockField::All),
                 _ => {
-                    println!("Warning: Unknown block field flag '{}' ignored", flag);
+                    println!("Warning: Unknown block field flag '{flag}' ignored");
                     None
                 }
             };
@@ -363,9 +363,9 @@ impl Generator {
 
     pub fn parse_cli_config_to_processing_config(
         cli_config: Vec<String>,
-        fields: Vec<block::block::BlockField>,
-    ) -> block::block::ProcessingConfig {
-        let mut config = block::block::ProcessingConfig {
+        fields: Vec<block::block_calls::BlockField>,
+    ) -> block::block_calls::ProcessingConfig {
+        let mut config = block::block_calls::ProcessingConfig {
             fields_to_modify: fields,
             version_override: None,
             timestamp_offset: None,
@@ -379,8 +379,7 @@ impl Generator {
                         config.version_override = Some(value);
                     } else {
                         println!(
-                            "Warning: Invalid version override value '{}' ignored",
-                            value_str
+                            "Warning: Invalid version override value '{value_str}' ignored"
                         );
                     }
                 }
@@ -390,15 +389,14 @@ impl Generator {
                         config.timestamp_offset = Some(value);
                     } else {
                         println!(
-                            "Warning: Invalid timestamp offset value '{}' ignored",
-                            value_str
+                            "Warning: Invalid timestamp offset value '{value_str}' ignored"
                         );
                     }
                 }
             } else if config_option == "--zero-hashes" {
                 config.randomize_hashes = false;
             } else {
-                println!("Warning: Unknown config option '{}' ignored", config_option);
+                println!("Warning: Unknown config option '{config_option}' ignored");
             }
         }
 

@@ -3,11 +3,11 @@ pub mod input;
 pub mod locktime;
 pub mod output;
 pub mod script;
-pub mod transaction;
+pub mod transaction_calls;
 pub mod version;
 
 pub use flags::*;
-pub use transaction::*;
+pub use transaction_calls::*;
 pub use input::*;
 pub use output::*;
 pub use script::*;
