@@ -122,9 +122,9 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_block_fields(flags);
         
         assert_eq!(result.len(), 3);
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Version));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::PrevBlockHash));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Nonce));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Version));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::PrevBlockHash));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Nonce));
     }
 
     #[test]
@@ -134,7 +134,7 @@ fn test_generate_block_with_multiple_transactions() {
             "--timestamp-offset=3600".to_string(),
             "--zero-hashes".to_string(),
         ];
-        let fields = vec![misfit_core::breakers::block::block::BlockField::Version];
+        let fields = vec![misfit_core::breakers::block::block_calls::BlockField::Version];
         
         let result = Generator::parse_cli_config_to_processing_config(cli_config, fields);
         
@@ -289,12 +289,12 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_block_fields(flags);
         
         assert_eq!(result.len(), 6);
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Version));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::PrevBlockHash));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::MerkleRoot));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Timestamp));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Bits));
-        assert!(result.contains(&misfit_core::breakers::block::block::BlockField::Nonce));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Version));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::PrevBlockHash));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::MerkleRoot));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Timestamp));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Bits));
+        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Nonce));
     }
     #[test]
     fn test_transaction_witness_for_each_script_type() {

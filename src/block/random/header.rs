@@ -33,11 +33,15 @@ impl RandomHeader for Header {
         Header {
             version: params.version.unwrap_or_else(Version::random),
             prev_blockhash: params.prev_blockhash.unwrap_or_else(|| {
-                let mut h_params = HeaderParams::default();
-                h_params.prev_blockhash = Some(BlockHash::all_zeros());
+                let h_params = HeaderParams {
+                    prev_blockhash: Some(BlockHash::all_zeros()),
+                    ..Default::default()
+                };
 
-                let mut block_params = BlockParams::default();
-                block_params.header = Some(Header::random(h_params));
+                let block_params = BlockParams {
+                    header: Some(Header::random(h_params)),
+                    ..Default::default()
+                };
 
                 let (block, _) = Block::random(block_params); 
                 block.block_hash() 

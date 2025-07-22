@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::str::FromStr;
 use bitcoin::{Transaction, consensus::deserialize};
 use super::{InvalidationFlag, input::*, output::*, version::*, locktime::*};
 
@@ -110,17 +111,17 @@ pub fn parse_flags(args: Vec<String>) -> HashSet<InvalidationFlag> {
 
     // Parse all provided flags
     for arg in args.iter().skip(1) {
-        if !arg.starts_with("--") {
-            continue;
-        }
-
-        let flag_str = &arg[2..]; // Remove "--" prefix
-        if let Some(flag) = InvalidationFlag::from_str(flag_str) {
-            flags.insert(flag);
-        } else {
-            println!("Warning: Unknown flag '{arg}' ignored");
-        }
+    if !arg.starts_with("--") {
+        continue;
     }
+
+    let flag_str = &arg[2..]; 
+    if let Ok(flag) = InvalidationFlag::from_str(flag_str) {
+        flags.insert(flag);
+    } else {
+        println!("Warning: Unknown flag '{arg}' ignored");
+    }
+}
 
     flags
 }

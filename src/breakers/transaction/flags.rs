@@ -1,4 +1,4 @@
-// Define available invalidation flags
+use std::str::FromStr;
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum InvalidationFlag {
     Version,    
@@ -13,20 +13,22 @@ pub enum InvalidationFlag {
     All,
 }
 
-impl InvalidationFlag {
-    pub fn from_str(s: &str) -> Option<Self> {
+impl FromStr for InvalidationFlag {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "version" => Some(Self::Version),
-            "input-txid" | "txid" => Some(Self::InputTxid),
-            "input-vout" | "vout" => Some(Self::InputVout),
-            "input-script" | "script-sig" => Some(Self::InputScriptSig),
-            "input-sequence" | "sequence" => Some(Self::InputSequence),
-            "output-amount" | "amount" => Some(Self::OutputAmount),
-            "output-script" | "script-pubkey" => Some(Self::OutputScriptPubKey),
-            "witness" | "witness-data" => Some(Self::WitnessData),
-            "locktime" => Some(Self::Locktime),
-            "all" => Some(Self::All),
-            _ => None,
+            "version" => Ok(Self::Version),
+            "input-txid" | "txid" => Ok(Self::InputTxid),
+            "input-vout" | "vout" => Ok(Self::InputVout),
+            "input-script" | "script-sig" => Ok(Self::InputScriptSig),
+            "input-sequence" | "sequence" => Ok(Self::InputSequence),
+            "output-amount" | "amount" => Ok(Self::OutputAmount),
+            "output-script" | "script-pubkey" => Ok(Self::OutputScriptPubKey),
+            "witness" | "witness-data" => Ok(Self::WitnessData),
+            "locktime" => Ok(Self::Locktime),
+            "all" => Ok(Self::All),
+            _ => Err(()),
         }
     }
 }

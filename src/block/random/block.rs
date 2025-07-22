@@ -33,11 +33,13 @@ impl RandomBlock for Block {
             let random = rand::thread_rng().gen_range(1..10);
             let mut txs = vec![];
             for _ in 0..random {
-                let mut tx_params = TxParams::default();
-                tx_params.block_height = Some(block_height); // NOVO
-                let tx_info = GenerateTx::valid_random(tx_params);
-                txs.push(tx_info);
-            }
+            let tx_params = TxParams {
+                block_height: Some(block_height),
+                ..Default::default()
+            };
+            let tx_info = GenerateTx::valid_random(tx_params);
+            txs.push(tx_info);
+        }
             txs
         });
 
@@ -50,8 +52,7 @@ impl RandomBlock for Block {
         if has_segwit && !tx_data.is_empty() {
             {
                 let coinbase = &mut tx_data[0];
-                if coinbase.input.is_empty() {
-                }
+                coinbase.input.is_empty();
                 if coinbase.input[0].witness.is_empty() {
                     coinbase.input[0].witness.push(vec![0u8; 32]);
                 } else if coinbase.input[0].witness[0].len() != 32 {
@@ -61,7 +62,7 @@ impl RandomBlock for Block {
             } 
 
             let block_tmp = BitcoinBlock {
-                header: params.header.clone().unwrap_or_else(|| Header::random(HeaderParams::default())),
+                header: params.header.unwrap_or_else(|| Header::random(HeaderParams::default())),
                 txdata: tx_data.clone(),
             };
             let witness_root = block_tmp.witness_root().unwrap();
@@ -89,8 +90,10 @@ impl RandomBlock for Block {
         }
 
         let header = params.header.unwrap_or_else(|| {
-            let mut header_params = HeaderParams::default();
-            header_params.txs = Some(tx_data.clone());
+            let header_params = HeaderParams {
+                txs: Some(tx_data.clone()),
+                ..Default::default()
+            };
             Header::random(header_params)
         });
 
