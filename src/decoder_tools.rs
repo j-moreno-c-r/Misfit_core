@@ -41,49 +41,6 @@ impl BitcoinTransactionDecoder {
     }
 }
 
-
-/* 
-    /// Pretty print a decoded transaction
-    pub fn print_transaction(&self, decoded: &DecodedTransaction) {
-        println!("=== Bitcoin Transaction Details ===");
-        println!("TXID: {}", decoded.txid);
-        println!("Version: {}", decoded.version);
-        println!("Lock Time: {}", decoded.lock_time);
-        println!("Size: {} bytes", decoded.size);
-        println!("Virtual Size: {} vbytes", decoded.vsize);
-        println!("Weight: {} WU", decoded.weight);
-        println!();
-
-        println!("INPUTS ({}):", decoded.inputs.len());
-        for (i, input) in decoded.inputs.iter().enumerate() {
-            println!("  Input {}:", i);
-            println!("    Previous Output: {}:{}", input.previous_output.txid, input.previous_output.vout);
-            println!("    Script Sig: {}", input.script_sig);
-            println!("    Sequence: 0x{:08x}", input.sequence);
-            
-            if !input.witness.is_empty() {
-                println!("    Witness ({} items):", input.witness.len());
-                for (j, witness_item) in input.witness.iter().enumerate() {
-                    println!("      {}: {}", j, hex::encode(witness_item));
-                }
-            }
-            println!();
-        }
-
-        println!("OUTPUTS ({}):", decoded.outputs.len());
-        for (i, output) in decoded.outputs.iter().enumerate() {
-            println!("  Output {}:", i);
-            println!("    Value: {} satoshis ({} BTC)", output.value, output.value as f64 / 100_000_000.0);
-            println!("    Script PubKey: {}", output.script_pubkey);
-            println!();
-        }
-    }
-*/
-
-
-
-
-
 // Decoding, utilities, and helper functions implementation
 pub struct BlockUtils;
 impl BlockUtils {

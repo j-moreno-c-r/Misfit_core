@@ -5,7 +5,7 @@ use misfit_core::block::breakers::block as BlockBreaker;
 use misfit_core::transaction::breakers as TxBreaker;
 use misfit_core::block::generator::GenerateBlock;
 use misfit_core::block::random::block::BlockParams;
-use misfit_core::breakers::decoder_tools;
+use misfit_core::decoder_tools;
 use misfit_core::regtest_pack::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
 use misfit_core::transaction::random::input::InputParams;
