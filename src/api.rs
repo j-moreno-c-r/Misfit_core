@@ -5,7 +5,7 @@ use misfit_core::block::breakers::block as BlockBreaker;
 use misfit_core::transaction::breakers as TxBreaker;
 use misfit_core::block::generator::GenerateBlock;
 use misfit_core::block::random::block::BlockParams;
-use misfit_core::decoder_tools;
+use misfit_core::block::decoder;
 use misfit_core::regtest_pack::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
 use misfit_core::transaction::random::input::InputParams;
@@ -92,14 +92,14 @@ impl Generator {
     pub fn decode_raw_transaction(
         raw_tx: String,
     ) -> Result<Transaction, Box<dyn std::error::Error>> {
-        let decoder = decoder_tools::BitcoinTransactionDecoder::new();
+        let decoder = decoder::BitcoinTransactionDecoder::new();
         decoder.decode_hex(&raw_tx)
     }
 
     pub fn decoder_block_header(
         block_header: String,
     ) -> Result<Header, Box<dyn std::error::Error>> {
-        decoder_tools::BlockUtils::decode_header_from_hex(&block_header)
+        decoder::BlockUtils::decode_header_from_hex(&block_header)
     }
     pub fn regtest_invocation(name_of_wallet: &str, mode_of_cli: &str) -> RegtestManager {
         RegtestManager::new(name_of_wallet, mode_of_cli)
@@ -205,7 +205,7 @@ impl Generator {
 
         // Create block from header for processing
         let original_block =
-            decoder_tools::BlockUtils::create_minimal_block_from_header(decoded_header);
+            decoder::BlockUtils::create_minimal_block_from_header(decoded_header);
 
         // Process the block using BlockProcessor
         let processor = BlockBreaker::BlockProcessor::new(processing_config.clone());
