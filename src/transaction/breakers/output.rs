@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use bitcoin::{TxOut, Amount};
-use super::{InvalidationFlag, script::corrupt_script};
+use super::{flags::InvalidationFlag, script::corrupt_script};
 
 pub fn invalidate_output_in_place(
     output: &mut TxOut, 

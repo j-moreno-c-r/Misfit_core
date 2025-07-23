@@ -2,9 +2,10 @@ use bitcoin::block::Header;
 use bitcoin::consensus::encode;
 use bitcoin::Transaction;
 use misfit_core::block::breakers::block as BlockBreaker;
+use misfit_core::transaction::breakers as TxBreaker;
 use misfit_core::block::generator::GenerateBlock;
 use misfit_core::block::random::block::BlockParams;
-use misfit_core::breakers::{decoder_tools, transaction};
+use misfit_core::breakers::decoder_tools;
 use misfit_core::regtest_pack::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
 use misfit_core::transaction::random::input::InputParams;
@@ -120,7 +121,7 @@ impl Generator {
         };
 
         // Create invalid version based on specified flags
-        let invalid_tx = transaction::transaction_calls::TransactionInvalidator::invalidate(
+        let invalid_tx = TxBreaker::transaction::TransactionInvalidator::invalidate(
             decoded_tx,
             &invalidation_flags,
         );
@@ -131,36 +132,36 @@ impl Generator {
         // List which fields are being invalidated
         result.push_str("Invalidating the following fields:\n");
 
-        if invalidation_flags.contains(&transaction::flags::InvalidationFlag::All) {
+        if invalidation_flags.contains(&TxBreaker::flags::InvalidationFlag::All) {
             result.push_str("  - ALL FIELDS\n");
         } else {
             for flag in &invalidation_flags {
                 match flag {
-                    transaction::flags::InvalidationFlag::Version => {
+                    TxBreaker::flags::InvalidationFlag::Version => {
                         result.push_str("  - Transaction Version\n")
                     }
-                    transaction::flags::InvalidationFlag::InputTxid => {
+                    TxBreaker::flags::InvalidationFlag::InputTxid => {
                         result.push_str("  - Input TXIDs\n")
                     }
-                    transaction::flags::InvalidationFlag::InputVout => {
+                    TxBreaker::flags::InvalidationFlag::InputVout => {
                         result.push_str("  - Input Vouts\n")
                     }
-                    transaction::flags::InvalidationFlag::InputScriptSig => {
+                    TxBreaker::flags::InvalidationFlag::InputScriptSig => {
                         result.push_str("  - Input Script Signatures\n")
                     }
-                    transaction::flags::InvalidationFlag::InputSequence => {
+                    TxBreaker::flags::InvalidationFlag::InputSequence => {
                         result.push_str("  - Input Sequences\n")
                     }
-                    transaction::flags::InvalidationFlag::OutputAmount => {
+                    TxBreaker::flags::InvalidationFlag::OutputAmount => {
                         result.push_str("  - Output Amounts\n")
                     }
-                    transaction::flags::InvalidationFlag::OutputScriptPubKey => {
+                    TxBreaker::flags::InvalidationFlag::OutputScriptPubKey => {
                         result.push_str("  - Output Script PubKeys\n")
                     }
-                    transaction::flags::InvalidationFlag::WitnessData => {
+                    TxBreaker::flags::InvalidationFlag::WitnessData => {
                         result.push_str("  - Witness Data\n")
                     }
-                    transaction::flags::InvalidationFlag::Locktime => {
+                    TxBreaker::flags::InvalidationFlag::Locktime => {
                         result.push_str("  - Locktime\n")
                     }
                     _ => {}
@@ -305,21 +306,21 @@ impl Generator {
 
     pub fn parse_cli_flags_to_invalidation_flags(
         cli_flags: Vec<String>,
-    ) -> HashSet<transaction::flags::InvalidationFlag> {
+    ) -> HashSet<TxBreaker::flags::InvalidationFlag> {
         let mut flags = HashSet::new();
 
         for flag in cli_flags {
             let invalidation_flag = match flag.as_str() {
-                "--version" => Some(transaction::flags::InvalidationFlag::Version),
-                "--txid" => Some(transaction::flags::InvalidationFlag::InputTxid),
-                "--vout" => Some(transaction::flags::InvalidationFlag::InputVout),
-                "--script-sig" => Some(transaction::flags::InvalidationFlag::InputScriptSig),
-                "--sequence" => Some(transaction::flags::InvalidationFlag::InputSequence),
-                "--amount" => Some(transaction::flags::InvalidationFlag::OutputAmount),
-                "--script-pubkey" => Some(transaction::flags::InvalidationFlag::OutputScriptPubKey),
-                "--witness" => Some(transaction::flags::InvalidationFlag::WitnessData),
-                "--locktime" => Some(transaction::flags::InvalidationFlag::Locktime),
-                "--all" => Some(transaction::flags::InvalidationFlag::All),
+                "--version" => Some(TxBreaker::flags::InvalidationFlag::Version),
+                "--txid" => Some(TxBreaker::flags::InvalidationFlag::InputTxid),
+                "--vout" => Some(TxBreaker::flags::InvalidationFlag::InputVout),
+                "--script-sig" => Some(TxBreaker::flags::InvalidationFlag::InputScriptSig),
+                "--sequence" => Some(TxBreaker::flags::InvalidationFlag::InputSequence),
+                "--amount" => Some(TxBreaker::flags::InvalidationFlag::OutputAmount),
+                "--script-pubkey" => Some(TxBreaker::flags::InvalidationFlag::OutputScriptPubKey),
+                "--witness" => Some(TxBreaker::flags::InvalidationFlag::WitnessData),
+                "--locktime" => Some(TxBreaker::flags::InvalidationFlag::Locktime),
+                "--all" => Some(TxBreaker::flags::InvalidationFlag::All),
                 _ => {
                     println!("Warning: Unknown flag '{flag}' ignored");
                     None

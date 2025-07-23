@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::str::FromStr;
 use bitcoin::{Transaction, consensus::deserialize};
-use super::{InvalidationFlag, input::*, output::*, version::*, locktime::*};
+use super::{flags::InvalidationFlag, input::*, output::*, version::*, locktime::*};
 
 #[derive(Default)]
 pub struct TransactionInvalidator;
