@@ -1,9 +1,10 @@
 use bitcoin::block::Header;
 use bitcoin::consensus::encode;
 use bitcoin::Transaction;
+use misfit_core::block::breakers::block as BlockBreaker;
 use misfit_core::block::generator::GenerateBlock;
 use misfit_core::block::random::block::BlockParams;
-use misfit_core::breakers::{block, decoder_tools, transaction};
+use misfit_core::breakers::{decoder_tools, transaction};
 use misfit_core::regtest_pack::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
 use misfit_core::transaction::random::input::InputParams;
@@ -206,7 +207,7 @@ impl Generator {
             decoder_tools::BlockUtils::create_minimal_block_from_header(decoded_header);
 
         // Process the block using BlockProcessor
-        let processor = block::block_calls::BlockProcessor::new(processing_config.clone());
+        let processor = BlockBreaker::BlockProcessor::new(processing_config.clone());
         let broken_block = processor.process_block(&original_block);
 
         // Build the result string
@@ -217,20 +218,20 @@ impl Generator {
 
         if processing_config
             .fields_to_modify
-            .contains(&block::block_calls::BlockField::All)
+            .contains(&BlockBreaker::BlockField::All)
         {
             result.push_str("  - ALL FIELDS\n");
         } else {
             for field in &processing_config.fields_to_modify {
                 match field {
-                    block::block_calls::BlockField::Version => result.push_str("  - Block Version\n"),
-                    block::block_calls::BlockField::PrevBlockHash => {
+                    BlockBreaker::BlockField::Version => result.push_str("  - Block Version\n"),
+                    BlockBreaker::BlockField::PrevBlockHash => {
                         result.push_str("  - Previous Block Hash\n")
                     }
-                    block::block_calls::BlockField::MerkleRoot => result.push_str("  - Merkle Root\n"),
-                    block::block_calls::BlockField::Timestamp => result.push_str("  - Timestamp\n"),
-                    block::block_calls::BlockField::Bits => result.push_str("  - Difficulty Bits\n"),
-                    block::block_calls::BlockField::Nonce => result.push_str("  - Nonce\n"),
+                    BlockBreaker::BlockField::MerkleRoot => result.push_str("  - Merkle Root\n"),
+                    BlockBreaker::BlockField::Timestamp => result.push_str("  - Timestamp\n"),
+                    BlockBreaker::BlockField::Bits => result.push_str("  - Difficulty Bits\n"),
+                    BlockBreaker::BlockField::Nonce => result.push_str("  - Nonce\n"),
                     _ => {}
                 }
             }
@@ -335,18 +336,18 @@ impl Generator {
 
     pub fn parse_cli_flags_to_block_fields(
         cli_flags: Vec<String>,
-    ) -> Vec<block::block_calls::BlockField> {
+    ) -> Vec<BlockBreaker::BlockField> {
         let mut fields = Vec::new();
 
         for flag in cli_flags {
             let block_field = match flag.as_str() {
-                "--version" => Some(block::block_calls::BlockField::Version),
-                "--prev-hash" => Some(block::block_calls::BlockField::PrevBlockHash),
-                "--merkle-root" => Some(block::block_calls::BlockField::MerkleRoot),
-                "--timestamp" => Some(block::block_calls::BlockField::Timestamp),
-                "--bits" => Some(block::block_calls::BlockField::Bits),
-                "--nonce" => Some(block::block_calls::BlockField::Nonce),
-                "--all" => Some(block::block_calls::BlockField::All),
+                "--version" => Some(BlockBreaker::BlockField::Version),
+                "--prev-hash" => Some(BlockBreaker::BlockField::PrevBlockHash),
+                "--merkle-root" => Some(BlockBreaker::BlockField::MerkleRoot),
+                "--timestamp" => Some(BlockBreaker::BlockField::Timestamp),
+                "--bits" => Some(BlockBreaker::BlockField::Bits),
+                "--nonce" => Some(BlockBreaker::BlockField::Nonce),
+                "--all" => Some(BlockBreaker::BlockField::All),
                 _ => {
                     println!("Warning: Unknown block field flag '{flag}' ignored");
                     None
@@ -363,9 +364,9 @@ impl Generator {
 
     pub fn parse_cli_config_to_processing_config(
         cli_config: Vec<String>,
-        fields: Vec<block::block_calls::BlockField>,
-    ) -> block::block_calls::ProcessingConfig {
-        let mut config = block::block_calls::ProcessingConfig {
+        fields: Vec<BlockBreaker::BlockField>,
+    ) -> BlockBreaker::ProcessingConfig {
+        let mut config = BlockBreaker::ProcessingConfig {
             fields_to_modify: fields,
             version_override: None,
             timestamp_offset: None,
