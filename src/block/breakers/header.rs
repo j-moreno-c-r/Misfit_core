@@ -80,9 +80,9 @@ impl HeaderProcessor {
         version_override: Option<i32>,
         timestamp_offset: Option<i64>,
         randomize_hashes: bool,
-        fields_to_modify: &[super::block_calls::BlockField],
+        fields_to_modify: &[super::block::BlockField],
     ) -> Header {
-        use super::block_calls::BlockField;
+        use super::block::BlockField;
         
         let mut modified_header = *header;
         let should_modify_all = fields_to_modify.contains(&BlockField::All);

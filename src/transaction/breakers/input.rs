@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 use bitcoin::{TxIn, Witness};
-use super::{InvalidationFlag, script::corrupt_script};
+use super::{flags::InvalidationFlag, script::corrupt_script};
 
 pub fn invalidate_input_in_place(
     input: &mut TxIn, 

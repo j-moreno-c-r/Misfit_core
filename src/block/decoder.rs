@@ -1,5 +1,46 @@
+use bitcoin::{
+    consensus::deserialize,
+    Transaction,
+    blockdata::block::{Block, Header},
+};
 use bitcoin::consensus::Decodable;
-use bitcoin::blockdata::block::{Block, Header};
+
+#[derive(Default)]
+pub struct BitcoinTransactionDecoder;
+
+impl BitcoinTransactionDecoder {
+    pub fn new() -> Self {
+        Self
+    }
+
+    /// Decode a hex string directly to bitcoin::Transaction
+    pub fn decode_hex(&self, hex_string: &str) -> Result<Transaction, Box<dyn std::error::Error>> {
+        let clean_hex = hex_string.trim().replace(" ", "").to_lowercase();
+        let bytes = hex::decode(&clean_hex)?;
+        self.decode_bytes(&bytes)
+    }
+
+    /// Decode bytes directly to bitcoin::Transaction
+    pub fn decode_bytes(&self, bytes: &[u8]) -> Result<Transaction, Box<dyn std::error::Error>> {
+        let tx: Transaction = deserialize(bytes)?;
+        Ok(tx)
+    }
+
+    /// Helper method to check if transaction has witness data
+    pub fn has_witness_data(&self, tx: &Transaction) -> bool {
+        tx.input.iter().any(|input| !input.witness.is_empty())
+    }
+
+    /// Helper method to get SegWit marker and flag
+    pub fn get_segwit_flags(&self, tx: &Transaction) -> (u8, u8) {
+        if self.has_witness_data(tx) {
+            (0x00, 0x01) // SegWit marker and flag
+        } else {
+            (0x00, 0x00) // No SegWit
+        }
+    }
+}
+
 // Decoding, utilities, and helper functions implementation
 pub struct BlockUtils;
 impl BlockUtils {

@@ -81,9 +81,9 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
         assert_eq!(result.len(), 3);
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Version));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputTxid));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::OutputAmount));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::Version));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::InputTxid));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::OutputAmount));
     }
 
     #[test]
@@ -93,7 +93,7 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
         assert_eq!(result.len(), 1);
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::All));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::All));
     }
 
     #[test]
@@ -107,8 +107,8 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
         assert_eq!(result.len(), 2);
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Version));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputTxid));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::Version));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::InputTxid));
     }
 
     #[test]
@@ -122,9 +122,9 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_block_fields(flags);
         
         assert_eq!(result.len(), 3);
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Version));
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::PrevBlockHash));
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Nonce));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::Version));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::PrevBlockHash));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::Nonce));
     }
 
     #[test]
@@ -134,7 +134,7 @@ fn test_generate_block_with_multiple_transactions() {
             "--timestamp-offset=3600".to_string(),
             "--zero-hashes".to_string(),
         ];
-        let fields = vec![misfit_core::breakers::block::block_calls::BlockField::Version];
+        let fields = vec![misfit_core::block::breakers::block::BlockField::Version];
         
         let result = Generator::parse_cli_config_to_processing_config(cli_config, fields);
         
@@ -264,15 +264,15 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_invalidation_flags(flags);
         
         assert_eq!(result.len(), 9);
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Version));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputTxid));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputVout));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputScriptSig));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::InputSequence));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::OutputAmount));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::OutputScriptPubKey));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::WitnessData));
-        assert!(result.contains(&misfit_core::breakers::transaction::flags::InvalidationFlag::Locktime));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::Version));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::InputTxid));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::InputVout));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::InputScriptSig));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::InputSequence));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::OutputAmount));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::OutputScriptPubKey));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::WitnessData));
+        assert!(result.contains(&misfit_core::transaction::breakers::flags::InvalidationFlag::Locktime));
     }
 
     #[test]
@@ -289,12 +289,12 @@ fn test_generate_block_with_multiple_transactions() {
         let result = Generator::parse_cli_flags_to_block_fields(flags);
         
         assert_eq!(result.len(), 6);
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Version));
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::PrevBlockHash));
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::MerkleRoot));
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Timestamp));
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Bits));
-        assert!(result.contains(&misfit_core::breakers::block::block_calls::BlockField::Nonce));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::Version));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::PrevBlockHash));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::MerkleRoot));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::Timestamp));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::Bits));
+        assert!(result.contains(&misfit_core::block::breakers::block::BlockField::Nonce));
     }
     #[test]
     fn test_transaction_witness_for_each_script_type() {

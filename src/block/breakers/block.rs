@@ -1,6 +1,7 @@
 use bitcoin::blockdata::block::{Block, Header};
+use crate::block::decoder::BlockUtils;
+
 use super::header::HeaderProcessor;
-use super::decoder_tools::BlockUtils;
 
 // Re-export the enum and config from the original design
 #[derive(Debug, Clone, PartialEq)]
