@@ -8,11 +8,9 @@ use misfit_core::block::random::block::BlockParams;
 use misfit_core::block::decoder;
 use misfit_core::regtest_pack::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
-use misfit_core::transaction::random::input::InputParams;
-use misfit_core::transaction::random::script::{ScriptParams, ScriptTypes};
-use misfit_core::transaction::random::transaction::TxParams;
+use misfit_core::transaction::random::{input::InputParams,script::{ScriptParams, ScriptTypes},transaction::TxParams};
 use std::collections::HashSet;
-
+use crate::read_defaults;
 pub struct Generator {}
 
 impl Generator {
@@ -63,17 +61,7 @@ impl Generator {
         let mut txid: Vec<String> = vec![];
 
         for _c in 0..count {
-        let mut tx_params = TxParams::default();
-        let tx_input_params = InputParams {
-            script_params: Some(ScriptParams {
-                script_type: Some(ScriptTypes::P2WPKH),
-                private_key: None,
-            }),
-            ..Default::default()
-        };
-
-        tx_params.input = Some(tx_input_params);
-
+        let tx_params = read_defaults::match_transaction_defaults();
         let tx_info = GenerateTx::valid_random(tx_params);
         let raw_transaction = hex::encode(encode::serialize(&tx_info)).to_string();
         let tx_id = tx_info.compute_txid().to_string();

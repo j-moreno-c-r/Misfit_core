@@ -1,0 +1,42 @@
+{
+"transaction":{
+    "version": "1",
+    "lock_time": "None",
+    "input": {
+            "outpoint": "None",
+            "script": "None",
+            "sequence": "None",
+            "witness": "None",
+            "script_params": {
+                "script_type": "p2wpkh",
+                "private_key": "None"
+            },
+            "private_key": "None"
+            },
+    "output": {
+            "value": "0",
+            "script_params": {
+                    "script_type": "p2pkh",
+                    "private_key": "None"
+            },
+            "private_key": "None"
+            },
+    "private_key": "None",
+    "block_height": "0"
+    },
+"block":{
+    "header":{
+            "version": "0",
+            "previous_block": "None",
+            "merkle_root": "None",
+            "time": "0",
+            "bits": "0",
+            "nonce": "0"
+        },
+    "transactions": {
+            "count": "1",
+            "list": ["None"]
+        },
+    "height": "0"
+    }
+}
