@@ -1,7 +1,7 @@
 use std::io;
 use std::io::Write;
 use clap::{Parser, Subcommand};
-use crate::api::Generator;
+use super::api::Generator;
 
 #[derive(Parser)]
 #[command(version, about, disable_help_subcommand = true)]
@@ -199,7 +199,7 @@ pub fn handle() {
                 });
                 break_block(block_header, flags, config);
             },
-            Commands::Tx { txscount, .. } => transaction(txscount), // TODO: Implement params into transaction generator
+            Commands::Tx { txscount, .. } => transaction(txscount), 
             Commands::Block { txscount } => block(txscount),
             Commands::Clear => clear(),
             Commands::RegtestStart => handle_result(regtest_manager.start()),

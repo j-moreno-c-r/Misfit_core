@@ -16,7 +16,7 @@
     "output": {
             "value": "0",
             "script_params": {
-                    "script_type": "p2pkh",
+                    "script_type": "p2wpkh",
                     "private_key": "None"
             },
             "private_key": "None"
@@ -34,7 +34,7 @@
             "nonce": "0"
         },
     "transactions": {
-            "count": "1",
+            "count": "5",
             "list": ["None"]
         },
     "height": "42"

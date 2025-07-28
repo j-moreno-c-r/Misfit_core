@@ -1,7 +1,7 @@
 
 #[cfg(test)]
 mod tests {
-    pub use crate::api::{Generator};
+    pub use crate::reference_implementation::api::{Generator};
 
     #[test]
     fn test_generate_single_transaction() {

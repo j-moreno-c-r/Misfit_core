@@ -68,7 +68,6 @@ pub fn match_transaction_defaults() -> TxParams {
     }
 }
 
-
 pub fn match_block_defaults(txs:Option<i32>) -> (BlockParams,i32) {
     let defaults = read_defaults();
 
@@ -86,8 +85,9 @@ pub fn match_block_defaults(txs:Option<i32>) -> (BlockParams,i32) {
         height,
     }, txs_count)
 }
+
 pub fn read_defaults() -> Value {
-    let data = fs::read_to_string("src/defaults.json").expect("Not Possible to read defaults.json");
+    let data = fs::read_to_string("src/reference_implementation/defaults.json").expect("Not Possible to read defaults.json");
     let value: Value = serde_json::from_str(&data).expect("Error to deserialize defaults.json");
     value
 }

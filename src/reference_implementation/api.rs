@@ -6,14 +6,14 @@ use misfit_core::transaction::breakers as TxBreaker;
 use misfit_core::block::generator::GenerateBlock;
 use misfit_core::block::random::block::BlockParams;
 use misfit_core::block::decoder;
-use misfit_core::regtest_pack::regtest::RegtestManager;
+use misfit_core::blockchain_manager::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
 use std::collections::HashSet;
-use crate::read_defaults;
+use super::read_defaults;
 pub struct Generator {}
 
 impl Generator {
-        pub fn block(tx_count: Option<u32>, height: Option<u32>) -> String {
+    pub fn block(tx_count: Option<u32>, height: Option<u32>) -> String {
         let (default_block_params, default_txs_count) = read_defaults::match_block_defaults(None);
 
         let txs_count = tx_count.unwrap_or(default_txs_count as u32);
