@@ -8,47 +8,41 @@ use misfit_core::block::random::block::BlockParams;
 use misfit_core::block::decoder;
 use misfit_core::regtest_pack::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
-use misfit_core::transaction::random::{input::InputParams,script::{ScriptParams, ScriptTypes},transaction::TxParams};
 use std::collections::HashSet;
 use crate::read_defaults;
 pub struct Generator {}
 
 impl Generator {
-    pub fn block(tx_count: u32) -> String {
+        pub fn block(tx_count: Option<u32>, height: Option<u32>) -> String {
+        let (default_block_params, default_txs_count) = read_defaults::match_block_defaults(None);
+
+        let txs_count = tx_count.unwrap_or(default_txs_count as u32);
+        let block_height = height.or(default_block_params.height);
+
         let mut txs: Vec<Transaction> = vec![];
         let mut raw_tx: Vec<String> = vec![];
         let mut tx_ids: Vec<String> = vec![];
 
-        for _c in 0..tx_count {
-        let mut tx_params = TxParams::default();
-        let tx_input_params = InputParams {
-            script_params: Some(ScriptParams {
-                script_type: Some(ScriptTypes::P2WPKH),
-                private_key: None,
-            }),
-            ..Default::default()
-        };
+        for _ in 0..txs_count {
+            let tx_params = read_defaults::match_transaction_defaults();
+            let tx_info = GenerateTx::valid_random(tx_params);
+            let raw_transaction = hex::encode(encode::serialize(&tx_info)).to_string();
+            let txid = tx_info.compute_txid().to_string();
 
-        tx_params.input = Some(tx_input_params);
+            txs.push(tx_info);
+            raw_tx.push(raw_transaction);
+            tx_ids.push(txid);
+        }
 
-        let tx_info = GenerateTx::valid_random(tx_params);
-        let raw_transaction = hex::encode(encode::serialize(&tx_info)).to_string();
-        let txid = tx_info.compute_txid().to_string();
-
-        txs.push(tx_info);
-        raw_tx.push(raw_transaction);
-        tx_ids.push(txid);
-}
-
-        let (block, height) = GenerateBlock::valid_random(BlockParams {
+        let (block, height_used) = GenerateBlock::valid_random(BlockParams {
             header: None,
             txs: Some(txs),
-            height: None,
+            height: block_height,
         });
 
         [
             format!("{:#?} ", block.header),
-            format!("Block Height: {height}"),
+            format!("Block Height: {}", block_height.unwrap_or(height_used)),
             format!("Block Header encoded: {:#?}", encode::serialize_hex(&block.header)),
             format!("Raw txs: {raw_tx:#?}"),
             format!("TxID: {tx_ids:#?}"),

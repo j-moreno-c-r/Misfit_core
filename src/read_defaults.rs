@@ -1,7 +1,6 @@
 use serde_json::{self, Value};
 use std::fs;
 use bitcoin::{transaction::{Version},absolute::{LockTime,Height},Amount};
-use serde::Deserialize;
 use misfit_core::transaction::random::{input::InputParams,script::{ScriptParams, ScriptTypes},transaction::TxParams};
 use misfit_core::block::random::block::BlockParams;
 
@@ -70,29 +69,28 @@ pub fn match_transaction_defaults() -> TxParams {
 }
 
 
-pub fn match_block_defaults() -> BlockParams {
+pub fn match_block_defaults(txs:Option<i32>) -> (BlockParams,i32) {
     let defaults = read_defaults();
 
     let block_defaults = &defaults["block"];
 
-    let header = None; // Por padrão, deixe None para gerar aleatório
+    let header = None;  
 
-    let txs_count = none_if_zero(&block_defaults["transactions"]["count"]).unwrap_or(1);
+    let txs_count:i32 = (txs).unwrap_or(none_if_zero(&block_defaults["transactions"]["count"]).unwrap());
 
     let height = none_if_zero(&block_defaults["height"]).map(|v| v as u32);
 
-    BlockParams {
+    (BlockParams {
         header,
         txs: None,
         height,
-    }
+    }, txs_count)
 }
 pub fn read_defaults() -> Value {
     let data = fs::read_to_string("src/defaults.json").expect("Not Possible to read defaults.json");
     let value: Value = serde_json::from_str(&data).expect("Error to deserialize defaults.json");
     value
 }
-
 
 pub fn none_if_zero(v: &Value) -> Option<i32> {
     match v {
@@ -102,6 +100,17 @@ pub fn none_if_zero(v: &Value) -> Option<i32> {
                     None
                 } else {
                     Some(i as i32)
+                }
+            } else {
+                None
+            }
+        }
+        Value::String(s) => {
+            if let Ok(i) = s.parse::<i32>() {
+                if i == 0 {
+                    None
+                } else {
+                    Some(i)
                 }
             } else {
                 None

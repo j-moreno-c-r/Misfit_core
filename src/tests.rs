@@ -43,7 +43,7 @@ mod tests {
 
 #[test]
 fn test_generate_one_block_with_one_transaction() {
-    let result = Generator::block(1);
+    let result = Generator::block(Some(1), None);
     let sections: Vec<&str> = result.split("\n---\n").collect();
     assert_eq!(sections.len(), 5); 
     assert!(result.contains("Header"));
@@ -53,7 +53,7 @@ fn test_generate_one_block_with_one_transaction() {
 
 #[test]
 fn generate_zero_tx_block() {
-    let result = Generator::block(0);
+    let result = Generator::block(Some(0), None);
     let sections: Vec<&str> = result.split("\n---\n").collect();
     assert_eq!(sections.len(), 5); 
     assert!(result.contains("Header"));
@@ -64,7 +64,7 @@ fn generate_zero_tx_block() {
 #[test]
 fn test_generate_block_with_multiple_transactions() {
     let tx_count = 10;
-    let result = Generator::block(tx_count);
+    let result = Generator::block(Some(tx_count), None);
     assert!(result.contains("Raw txs:"));
     assert!(result.contains("TxID:"));
     let sections: Vec<&str> = result.split("\n---\n").collect();

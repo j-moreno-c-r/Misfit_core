@@ -370,7 +370,7 @@ fn transaction(txscount: u32) {
 }
 
 fn block(txscount: u32) {
-    let block = Generator::block(txscount);
+    let block = Generator::block(Some(txscount), None);
     println!("Block: {block}");
 }
 
