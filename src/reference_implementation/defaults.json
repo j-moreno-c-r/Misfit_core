@@ -26,7 +26,7 @@
     },
 "block":{
     "header":{
-            "version": "0",
+            "version": "1",
             "previous_block": "None",
             "merkle_root": "None",
             "time": "0",
@@ -34,7 +34,7 @@
             "nonce": "0"
         },
     "transactions": {
-            "count": "5",
+            "count": "3",
             "list": ["None"]
         },
     "height": "0"

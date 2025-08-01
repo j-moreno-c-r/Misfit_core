@@ -158,8 +158,8 @@ pub fn help() {
     println!("regtest-stop                          - Stop the regtest node (please remember to stop before closing the program)");
 }
 
-pub fn block(txscount: u32) {
-    let block = Generator::block(Some(txscount), None);
+pub fn block(txscount: Option<u32>) {
+    let block = Generator::block(txscount, None);
     println!("Block: {block}");
 }
 
