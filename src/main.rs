@@ -1,6 +1,5 @@
-mod cli;
-mod api;
+mod reference_implementation;
 mod tests;
 fn main() {
-    cli::handle();
+    reference_implementation::cli::handle();
 } 
