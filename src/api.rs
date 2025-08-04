@@ -1,9 +1,11 @@
 use bitcoin::block::Header;
 use bitcoin::consensus::encode;
 use bitcoin::Transaction;
+use misfit_core::block::breakers::block as BlockBreaker;
+use misfit_core::transaction::breakers as TxBreaker;
 use misfit_core::block::generator::GenerateBlock;
 use misfit_core::block::random::block::BlockParams;
-use misfit_core::breakers::{block, decoder_tools, transaction};
+use misfit_core::block::decoder;
 use misfit_core::regtest_pack::regtest::RegtestManager;
 use misfit_core::transaction::generator::GenerateTx;
 use misfit_core::transaction::random::input::InputParams;
@@ -90,14 +92,14 @@ impl Generator {
     pub fn decode_raw_transaction(
         raw_tx: String,
     ) -> Result<Transaction, Box<dyn std::error::Error>> {
-        let decoder = decoder_tools::BitcoinTransactionDecoder::new();
+        let decoder = decoder::BitcoinTransactionDecoder::new();
         decoder.decode_hex(&raw_tx)
     }
 
     pub fn decoder_block_header(
         block_header: String,
     ) -> Result<Header, Box<dyn std::error::Error>> {
-        decoder_tools::BlockUtils::decode_header_from_hex(&block_header)
+        decoder::BlockUtils::decode_header_from_hex(&block_header)
     }
     pub fn regtest_invocation(name_of_wallet: &str, mode_of_cli: &str) -> RegtestManager {
         RegtestManager::new(name_of_wallet, mode_of_cli)
@@ -119,7 +121,7 @@ impl Generator {
         };
 
         // Create invalid version based on specified flags
-        let invalid_tx = transaction::transaction_calls::TransactionInvalidator::invalidate(
+        let invalid_tx = TxBreaker::transaction::TransactionInvalidator::invalidate(
             decoded_tx,
             &invalidation_flags,
         );
@@ -130,36 +132,36 @@ impl Generator {
         // List which fields are being invalidated
         result.push_str("Invalidating the following fields:\n");
 
-        if invalidation_flags.contains(&transaction::flags::InvalidationFlag::All) {
+        if invalidation_flags.contains(&TxBreaker::flags::InvalidationFlag::All) {
             result.push_str("  - ALL FIELDS\n");
         } else {
             for flag in &invalidation_flags {
                 match flag {
-                    transaction::flags::InvalidationFlag::Version => {
+                    TxBreaker::flags::InvalidationFlag::Version => {
                         result.push_str("  - Transaction Version\n")
                     }
-                    transaction::flags::InvalidationFlag::InputTxid => {
+                    TxBreaker::flags::InvalidationFlag::InputTxid => {
                         result.push_str("  - Input TXIDs\n")
                     }
-                    transaction::flags::InvalidationFlag::InputVout => {
+                    TxBreaker::flags::InvalidationFlag::InputVout => {
                         result.push_str("  - Input Vouts\n")
                     }
-                    transaction::flags::InvalidationFlag::InputScriptSig => {
+                    TxBreaker::flags::InvalidationFlag::InputScriptSig => {
                         result.push_str("  - Input Script Signatures\n")
                     }
-                    transaction::flags::InvalidationFlag::InputSequence => {
+                    TxBreaker::flags::InvalidationFlag::InputSequence => {
                         result.push_str("  - Input Sequences\n")
                     }
-                    transaction::flags::InvalidationFlag::OutputAmount => {
+                    TxBreaker::flags::InvalidationFlag::OutputAmount => {
                         result.push_str("  - Output Amounts\n")
                     }
-                    transaction::flags::InvalidationFlag::OutputScriptPubKey => {
+                    TxBreaker::flags::InvalidationFlag::OutputScriptPubKey => {
                         result.push_str("  - Output Script PubKeys\n")
                     }
-                    transaction::flags::InvalidationFlag::WitnessData => {
+                    TxBreaker::flags::InvalidationFlag::WitnessData => {
                         result.push_str("  - Witness Data\n")
                     }
-                    transaction::flags::InvalidationFlag::Locktime => {
+                    TxBreaker::flags::InvalidationFlag::Locktime => {
                         result.push_str("  - Locktime\n")
                     }
                     _ => {}
@@ -203,10 +205,10 @@ impl Generator {
 
         // Create block from header for processing
         let original_block =
-            decoder_tools::BlockUtils::create_minimal_block_from_header(decoded_header);
+            decoder::BlockUtils::create_minimal_block_from_header(decoded_header);
 
         // Process the block using BlockProcessor
-        let processor = block::block_calls::BlockProcessor::new(processing_config.clone());
+        let processor = BlockBreaker::BlockProcessor::new(processing_config.clone());
         let broken_block = processor.process_block(&original_block);
 
         // Build the result string
@@ -217,20 +219,20 @@ impl Generator {
 
         if processing_config
             .fields_to_modify
-            .contains(&block::block_calls::BlockField::All)
+            .contains(&BlockBreaker::BlockField::All)
         {
             result.push_str("  - ALL FIELDS\n");
         } else {
             for field in &processing_config.fields_to_modify {
                 match field {
-                    block::block_calls::BlockField::Version => result.push_str("  - Block Version\n"),
-                    block::block_calls::BlockField::PrevBlockHash => {
+                    BlockBreaker::BlockField::Version => result.push_str("  - Block Version\n"),
+                    BlockBreaker::BlockField::PrevBlockHash => {
                         result.push_str("  - Previous Block Hash\n")
                     }
-                    block::block_calls::BlockField::MerkleRoot => result.push_str("  - Merkle Root\n"),
-                    block::block_calls::BlockField::Timestamp => result.push_str("  - Timestamp\n"),
-                    block::block_calls::BlockField::Bits => result.push_str("  - Difficulty Bits\n"),
-                    block::block_calls::BlockField::Nonce => result.push_str("  - Nonce\n"),
+                    BlockBreaker::BlockField::MerkleRoot => result.push_str("  - Merkle Root\n"),
+                    BlockBreaker::BlockField::Timestamp => result.push_str("  - Timestamp\n"),
+                    BlockBreaker::BlockField::Bits => result.push_str("  - Difficulty Bits\n"),
+                    BlockBreaker::BlockField::Nonce => result.push_str("  - Nonce\n"),
                     _ => {}
                 }
             }
@@ -304,21 +306,21 @@ impl Generator {
 
     pub fn parse_cli_flags_to_invalidation_flags(
         cli_flags: Vec<String>,
-    ) -> HashSet<transaction::flags::InvalidationFlag> {
+    ) -> HashSet<TxBreaker::flags::InvalidationFlag> {
         let mut flags = HashSet::new();
 
         for flag in cli_flags {
             let invalidation_flag = match flag.as_str() {
-                "--version" => Some(transaction::flags::InvalidationFlag::Version),
-                "--txid" => Some(transaction::flags::InvalidationFlag::InputTxid),
-                "--vout" => Some(transaction::flags::InvalidationFlag::InputVout),
-                "--script-sig" => Some(transaction::flags::InvalidationFlag::InputScriptSig),
-                "--sequence" => Some(transaction::flags::InvalidationFlag::InputSequence),
-                "--amount" => Some(transaction::flags::InvalidationFlag::OutputAmount),
-                "--script-pubkey" => Some(transaction::flags::InvalidationFlag::OutputScriptPubKey),
-                "--witness" => Some(transaction::flags::InvalidationFlag::WitnessData),
-                "--locktime" => Some(transaction::flags::InvalidationFlag::Locktime),
-                "--all" => Some(transaction::flags::InvalidationFlag::All),
+                "--version" => Some(TxBreaker::flags::InvalidationFlag::Version),
+                "--txid" => Some(TxBreaker::flags::InvalidationFlag::InputTxid),
+                "--vout" => Some(TxBreaker::flags::InvalidationFlag::InputVout),
+                "--script-sig" => Some(TxBreaker::flags::InvalidationFlag::InputScriptSig),
+                "--sequence" => Some(TxBreaker::flags::InvalidationFlag::InputSequence),
+                "--amount" => Some(TxBreaker::flags::InvalidationFlag::OutputAmount),
+                "--script-pubkey" => Some(TxBreaker::flags::InvalidationFlag::OutputScriptPubKey),
+                "--witness" => Some(TxBreaker::flags::InvalidationFlag::WitnessData),
+                "--locktime" => Some(TxBreaker::flags::InvalidationFlag::Locktime),
+                "--all" => Some(TxBreaker::flags::InvalidationFlag::All),
                 _ => {
                     println!("Warning: Unknown flag '{flag}' ignored");
                     None
@@ -335,18 +337,18 @@ impl Generator {
 
     pub fn parse_cli_flags_to_block_fields(
         cli_flags: Vec<String>,
-    ) -> Vec<block::block_calls::BlockField> {
+    ) -> Vec<BlockBreaker::BlockField> {
         let mut fields = Vec::new();
 
         for flag in cli_flags {
             let block_field = match flag.as_str() {
-                "--version" => Some(block::block_calls::BlockField::Version),
-                "--prev-hash" => Some(block::block_calls::BlockField::PrevBlockHash),
-                "--merkle-root" => Some(block::block_calls::BlockField::MerkleRoot),
-                "--timestamp" => Some(block::block_calls::BlockField::Timestamp),
-                "--bits" => Some(block::block_calls::BlockField::Bits),
-                "--nonce" => Some(block::block_calls::BlockField::Nonce),
-                "--all" => Some(block::block_calls::BlockField::All),
+                "--version" => Some(BlockBreaker::BlockField::Version),
+                "--prev-hash" => Some(BlockBreaker::BlockField::PrevBlockHash),
+                "--merkle-root" => Some(BlockBreaker::BlockField::MerkleRoot),
+                "--timestamp" => Some(BlockBreaker::BlockField::Timestamp),
+                "--bits" => Some(BlockBreaker::BlockField::Bits),
+                "--nonce" => Some(BlockBreaker::BlockField::Nonce),
+                "--all" => Some(BlockBreaker::BlockField::All),
                 _ => {
                     println!("Warning: Unknown block field flag '{flag}' ignored");
                     None
@@ -363,9 +365,9 @@ impl Generator {
 
     pub fn parse_cli_config_to_processing_config(
         cli_config: Vec<String>,
-        fields: Vec<block::block_calls::BlockField>,
-    ) -> block::block_calls::ProcessingConfig {
-        let mut config = block::block_calls::ProcessingConfig {
+        fields: Vec<BlockBreaker::BlockField>,
+    ) -> BlockBreaker::ProcessingConfig {
+        let mut config = BlockBreaker::ProcessingConfig {
             fields_to_modify: fields,
             version_override: None,
             timestamp_offset: None,
