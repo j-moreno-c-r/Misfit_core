@@ -6,7 +6,7 @@ use bitcoin::{
 };
 use secp256k1::rand::{self, Rng};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScriptTypes {
     P2PK,
     P2PKH,
